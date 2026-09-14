@@ -1,0 +1,3 @@
+# esbuild's postinstall is not needed: its binary comes from the platform optional dependency.
+allowBuilds:
+  esbuild: false

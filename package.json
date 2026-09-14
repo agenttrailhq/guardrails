@@ -1,0 +1,72 @@
+{
+  "name": "@agenttrail/guardrails",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "The agenttrail guard rule corpus, its self-contained schema, and its fixtures.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agenttrailhq/guardrails.git"
+  },
+  "homepage": "https://github.com/agenttrailhq/guardrails#readme",
+  "bugs": {
+    "url": "https://github.com/agenttrailhq/guardrails/issues"
+  },
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@11.5.2",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./guardrails": "./src/rules.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      },
+      "./guardrails": {
+        "types": "./dist/guardrails.d.ts",
+        "import": "./dist/guardrails.js",
+        "require": "./dist/guardrails.cjs"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "require": "./dist/schema.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "lint": "biome check .",
+    "prepack": "tsup",
+    "spell": "cspell --no-progress .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.25.17"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.15",
+    "@types/node": "^25.9.1",
+    "cspell": "^8.19.4",
+    "tsup": "^8.3.5",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.7"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}
