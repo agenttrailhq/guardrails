@@ -41,7 +41,7 @@
  * Pinned to `package.json`'s `version` by `__tests__/stamp.test.ts` — this is a copy
  * of that value, not an independent one, and the test is what makes the copy safe.
  */
-export const CATALOG_VERSION = "0.0.1";
+export const CATALOG_VERSION = "0.0.2";
 
 /**
  * When the rules in this catalog reached their current state, as an ISO-8601

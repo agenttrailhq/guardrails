@@ -1,6 +1,6 @@
 {
   "name": "@agenttrail/guardrails",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "The agenttrail guard rule corpus, its self-contained schema, and its fixtures.",
   "repository": {
