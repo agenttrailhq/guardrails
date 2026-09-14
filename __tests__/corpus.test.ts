@@ -272,7 +272,7 @@ describe("fixtures", () => {
   });
 
   /**
-   * The look-alike pairs the build doc names, pinned by hand.
+   * The look-alike pairs, pinned by hand.
    *
    * A test cannot decide whether an `allow` fixture is a genuine near-miss — that
    * is the reviewer's job. What it can do is make sure the specific pairs someone
