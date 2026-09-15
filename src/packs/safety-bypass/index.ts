@@ -6,11 +6,13 @@
  * which is why every one of them holds for approval rather than blocks: each is
  * also, occasionally, the right thing to do.
  *
- * Five rules.
+ * Seven rules.
  */
 
 import type { Rule } from "../../schema.js";
 import { gbAdminMerge } from "./gb-admin-merge.js";
+import { gbAnsiTerminalForgery } from "./gb-ansi-terminal-forgery.js";
+import { gbAuditTrailPurge } from "./gb-audit-trail-purge.js";
 import { gbExecutionPolicyBypass } from "./gb-execution-policy-bypass.js";
 import { gbGitNoVerify } from "./gb-git-no-verify.js";
 import { gbHooksDisable } from "./gb-hooks-disable.js";
@@ -23,4 +25,6 @@ export const rules: readonly Rule[] = [
   gbHooksDisable,
   gbHostKeyBypass,
   gbExecutionPolicyBypass,
+  gbAuditTrailPurge,
+  gbAnsiTerminalForgery,
 ];

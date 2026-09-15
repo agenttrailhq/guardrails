@@ -1,5 +1,6 @@
+// cspell:words exfiltration
 /**
- * The eight packs, and the order they are presented in.
+ * The eleven packs, and the order they are presented in.
  *
  * These ids are authoritative and shared with the rules authored against them,
  * and with the guard's `config.json` `enabledPacks`. Renaming one of these is a
@@ -21,12 +22,15 @@ export const PACKS = [
   "safety-bypass",
   "privilege-supply-chain",
   "file-scope",
+  "agent-context",
+  "test-integrity",
+  "exfiltration",
 ] as const;
 
-/** One of the eight pack ids. A rule's `category` is always one of these. */
+/** One of the eleven pack ids. A rule's `category` is always one of these. */
 export type Pack = (typeof PACKS)[number];
 
-/** Is this string one of the eight pack ids? */
+/** Is this string one of the eleven pack ids? */
 export function isPack(value: string): value is Pack {
   return (PACKS as readonly string[]).includes(value);
 }

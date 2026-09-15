@@ -1,3 +1,4 @@
+// cspell:words exfiltration
 /**
  * The corpus itself — rules only, and **deliberately free of zod**.
  *
@@ -28,13 +29,16 @@
  * TYPE-only schema import. `corpus.test.ts` is what stops one from drifting.
  */
 
+import { rules as agentContext } from "./packs/agent-context/index.js";
 import { rules as destructiveData } from "./packs/destructive-data/index.js";
+import { rules as exfiltration } from "./packs/exfiltration/index.js";
 import { rules as fileScope } from "./packs/file-scope/index.js";
 import { rules as privilegeSupplyChain } from "./packs/privilege-supply-chain/index.js";
 import { rules as prodInfra } from "./packs/prod-infra/index.js";
 import { rules as rceSupplyChain } from "./packs/rce-supply-chain/index.js";
 import { rules as safetyBypass } from "./packs/safety-bypass/index.js";
 import { rules as secretExposure } from "./packs/secret-exposure/index.js";
+import { rules as testIntegrity } from "./packs/test-integrity/index.js";
 import { rules as workingTree } from "./packs/working-tree/index.js";
 import { PACKS, type Pack } from "./packs.js";
 import type { Rule } from "./schema.js";
@@ -79,12 +83,15 @@ export * from "./stamp.js";
 export const RULES_BY_PACK: Record<Pack, readonly Rule[]> = {
   "working-tree": workingTree,
   "destructive-data": destructiveData,
+  exfiltration,
   "prod-infra": prodInfra,
   "secret-exposure": secretExposure,
   "rce-supply-chain": rceSupplyChain,
   "safety-bypass": safetyBypass,
   "privilege-supply-chain": privilegeSupplyChain,
   "file-scope": fileScope,
+  "agent-context": agentContext,
+  "test-integrity": testIntegrity,
 };
 
 /**

@@ -143,10 +143,10 @@ describe("no two rules are near-duplicates", () => {
 
 describe("the corpus", () => {
   it("is no longer empty — the container shipped before the rules did", () => {
-    expect(RULES.length).toBe(56);
+    expect(RULES.length).toBe(74);
   });
 
-  it("exposes all eight packs, each with rules in it", () => {
+  it("exposes all eleven packs, each with rules in it", () => {
     expect(Object.keys(RULES_BY_PACK).sort()).toEqual([...PACKS].sort());
     for (const pack of PACKS) expect(RULES_BY_PACK[pack].length, pack).toBeGreaterThan(0);
   });

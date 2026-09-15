@@ -16,7 +16,7 @@ import { z } from "zod";
 /**
  * The five severities, in order, most→least severe.
  *
- * `info` earns its place: five of the eight packs default to `ask`/`warn`, and a
+ * `info` earns its place: seven of the eleven packs default to `ask`/`warn`, and a
  * warn-only rule labelled `low` overstates itself.
  *
  * Severity says how serious a match is. This package maps it to nothing else,
@@ -305,7 +305,7 @@ export const FixtureSchema = z.union([
  * The two directions every rule must prove, through the real evaluator.
  *
  * **`block` means "this rule MUST match"; `allow` means "this rule MUST NOT
- * match".** They are not verdicts. Five of the eight packs default to `ask` or
+ * match".** They are not verdicts. Seven of the eleven packs default to `ask` or
  * `warn`, and `warn` folds into an allow verdict, so reading `block` as "the
  * guard denies" would fail every `warn` rule and make the negative fixture
  * vacuous for them.

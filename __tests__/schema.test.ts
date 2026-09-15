@@ -1,3 +1,4 @@
+// cspell:words exfil
 /**
  * Rule-schema invariants.
  *
@@ -309,7 +310,7 @@ describe("required text fields", () => {
 });
 
 /**
- * `defineRule` is how all 56 rules will be authored, so its failure path is the
+ * `defineRule` is how every rule is authored, so its failure path is the
  * one that decides whether a malformed rule reaches the registry or stops at
  * import. An unvalidated authoring helper is how a corpus quietly acquires a
  * rule that never fires.

@@ -4,7 +4,7 @@
  * Rules only: no evaluator, and no dependency besides zod (see `schema.ts`).
  * `agenttrail-guard` bundles this catalog and evaluates it locally.
  *
- * 56 rules across eight packs, each shipping at least one `block` fixture (must
+ * 74 rules across eleven packs, each shipping at least one `block` fixture (must
  * match) and one `allow` fixture (must not match).
  *
  * ── Two entry points, and the difference matters ─────────────────────────────

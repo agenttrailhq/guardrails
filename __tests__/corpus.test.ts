@@ -1,4 +1,4 @@
-// cspell:words Dskip nocase
+// cspell:words Dskip exfiltration nocase
 /**
  * The corpus's own invariants — counts, shape, and the authoring conventions a
  * schema cannot express.
@@ -30,9 +30,9 @@ function conditionsOf(rule: Rule) {
   ];
 }
 
-describe("the corpus is 56 rules across eight packs", () => {
-  it("has exactly 56 rules", () => {
-    expect(RULES.length).toBe(56);
+describe("the corpus is 74 rules across eleven packs", () => {
+  it("has exactly 74 rules", () => {
+    expect(RULES.length).toBe(74);
   });
 
   /**
@@ -51,14 +51,17 @@ describe("the corpus is 56 rules across eight packs", () => {
       "prod-infra": 8,
       "secret-exposure": 10,
       "rce-supply-chain": 6,
-      "safety-bypass": 5,
+      "safety-bypass": 7,
       "privilege-supply-chain": 6,
       "file-scope": 4,
+      "agent-context": 6,
+      "test-integrity": 6,
+      exfiltration: 4,
     };
     for (const pack of PACKS) {
       expect(RULES_BY_PACK[pack].length, `pack ${pack}`).toBe(counts[pack]);
     }
-    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(56);
+    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(74);
   });
 
   it("leaves no pack empty — an empty pack in `rules list` reads as coverage", () => {
@@ -74,7 +77,7 @@ describe("every rule is schema-valid", () => {
 
   it("the sweep BITES — a malformed rule is rejected, not waved through", () => {
     // Without this, `parseRule` could be returning success unconditionally and
-    // all 56 assertions above would pass having proven nothing. Rule 17: a guard
+    // all 74 assertions above would pass having proven nothing. Rule 17: a guard
     // nobody has seen fail is not known to work.
     const malformed = { ...RULES[0], severity: "catastrophic" };
     expect(parseRule(malformed).success).toBe(false);
@@ -132,6 +135,9 @@ describe("rule ids", () => {
       "safety-bypass": "gb",
       "privilege-supply-chain": "ps",
       "file-scope": "fs",
+      "agent-context": "ac",
+      "test-integrity": "ti",
+      exfiltration: "ex",
     };
     for (const pack of PACKS) {
       for (const rule of RULES_BY_PACK[pack]) {
@@ -232,17 +238,17 @@ describe("every description carries its honest coverage limits", () => {
 });
 
 describe("fixtures", () => {
-  it("ships both directions for every rule, well past the 112 floor", () => {
+  it("ships both directions for every rule, well past the 148 floor", () => {
     const block = RULES.reduce((n, rule) => n + rule.fixtures.block.length, 0);
     const allow = RULES.reduce((n, rule) => n + rule.fixtures.allow.length, 0);
     for (const rule of RULES) {
       expect(rule.fixtures.block.length, rule.id).toBeGreaterThan(0);
       expect(rule.fixtures.allow.length, rule.id).toBeGreaterThan(0);
     }
-    // 56 x 2 is the bare minimum: one block and one allow fixture per rule. It is a floor, not a target:
+    // 74 x 2 is the bare minimum: one block and one allow fixture per rule. It is a floor, not a target:
     // a rule with one negative has proven it is quiet on the one near-miss its
     // own author thought of, which is the weakest possible version of the claim.
-    expect(block + allow).toBeGreaterThan(112);
+    expect(block + allow).toBeGreaterThan(148);
   });
 
   /**

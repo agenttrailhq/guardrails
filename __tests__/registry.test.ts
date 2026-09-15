@@ -1,7 +1,8 @@
+// cspell:words exfiltration
 /**
  * The pack registry.
  *
- * The eight ids are shared with the rules that are authored against them and
+ * The eleven ids are shared with the rules that are authored against them and
  * with the guard's `config.json` `enabledPacks`, so this test pins the list
  * literally rather than deriving it from itself.
  *
@@ -17,7 +18,7 @@ import { getRule, isPack, PACKS, RULES, RULES_BY_PACK, rulesForPack } from "../s
 
 const PACKS_DIR = fileURLToPath(new URL("../src/packs", import.meta.url));
 
-describe("the eight pack ids", () => {
+describe("the eleven pack ids", () => {
   it("are exactly these, in this order", () => {
     expect([...PACKS]).toEqual([
       "working-tree",
@@ -28,6 +29,9 @@ describe("the eight pack ids", () => {
       "safety-bypass",
       "privilege-supply-chain",
       "file-scope",
+      "agent-context",
+      "test-integrity",
+      "exfiltration",
     ]);
   });
 

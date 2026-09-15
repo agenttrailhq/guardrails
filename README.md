@@ -1,10 +1,10 @@
-<!-- cspell:words kubeconfig -->
+<!-- cspell:words exfiltration kubeconfig -->
 
 # @agenttrail/guardrails
 
 **A library of rules that spot dangerous commands before an AI coding agent runs them.**
 
-56 rules, grouped into 8 packs. Apache-2.0.
+74 rules, grouped into 11 packs. Apache-2.0.
 
 ---
 
@@ -81,7 +81,7 @@ Reading the fields:
 | `match` | The condition. `any_of` means "any one of these is enough". |
 | `fixtures` | Examples that must match, and examples that must not. |
 
-## The eight packs
+## The eleven packs
 
 A rule is filed by **the harm it prevents**, never by the technique it uses to spot it.
 
@@ -97,9 +97,12 @@ protection, which they never asked to turn off and would not know they had.
 | `prod-infra` | 8 | Changing running infrastructure — Terraform, Kubernetes, Helm, cloud deletes, a deploy that names production. |
 | `secret-exposure` | 10 | Credentials and sensitive data leaving where they live. Mostly `warn`: reading a secret is a normal part of a normal day. |
 | `rce-supply-chain` | 6 | Running code nobody reviewed — pipe-to-shell, a remote runner, a redirected registry, TLS verification off. |
-| `safety-bypass` | 5 | Turning off a check somebody installed on purpose — `--no-verify`, `--admin` merge, hooks disabled, host-key checking off. |
+| `safety-bypass` | 7 | Turning off a check somebody installed on purpose, or erasing the record of it — `--no-verify`, `--admin` merge, hooks disabled, host-key checking off, history and log purges, forged terminal output. |
 | `privilege-supply-chain` | 6 | Gaining reach or handing it out — `sudo` writes, `chmod 777`, IAM grants, persistence, publishing, new dependencies. |
 | `file-scope` | 4 | The agent wrote somewhere it had no business writing — its own config, the machine, git's internals, the CI definition. |
+| `agent-context` | 6 | The agent changing what it is or what it knows — its standing instructions, its memory, its skills and commands, its MCP servers — or starting more agents, or switching another agent's approvals off. |
+| `test-integrity` | 6 | The agent making its work look successful — deleting a test, weakening a runner's configuration, accepting every snapshot, switching a coverage gate off, silencing failures in bulk, or telling CI not to run. |
+| `exfiltration` | 4 | Moving data off the machine or opening a way in — a reverse shell, a public tunnel, a file upload, a paste service. Command channel only. |
 
 Pack names appear in user config files, so renaming one is a breaking change, not a tidy-up.
 
@@ -282,7 +285,7 @@ Use the first when you want to *apply* rules, and the second when you want to *v
 writing.
 
 They are separate because the guard starts a fresh process on **every single command** an agent runs,
-under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 56
+under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 74
 rules that were already checked before release.
 
 ## Where these rules came from
