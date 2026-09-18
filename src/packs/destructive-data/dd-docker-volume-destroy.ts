@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { LEADING_FLAGS, QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -14,16 +14,16 @@ export const ddDockerVolumeDestroy: Rule = {
   defaultAction: "require_approval",
   title: "Docker volume deletion destroys container data",
   description:
-    'Deletes Docker volumes, which is where a database running in a container keeps its data — `docker compose down -v` is one character away from `docker compose down` and the character is the difference between stopping the stack and losing its contents. Does NOT match `docker compose down` without the flag, `docker ps`, or `docker volume ls`, and it cannot tell a throwaway test volume from the one holding your local development data. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Deletes Docker volumes, which is where a database running in a container keeps its data — `docker compose down -v` is one character away from `docker compose down` and the character is the difference between stopping the stack and losing its contents. Does NOT match `docker compose down` without the flag, `docker ps`, or `docker volume ls`, and it cannot tell a throwaway test volume from the one holding your local development data. Global flags between `docker` and its subcommand are tolerated (`docker --context <name> compose down -v`, `-H <host>`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
-          "\\bdocker\\s+volume\\s+rm\\b",
-          "\\bdocker(\\s+compose|-compose)?\\s+down\\b[^|;&]*\\s-v\\b",
-          "\\bdocker(\\s+compose|-compose)?\\s+down\\b[^|;&]*--volumes\\b",
+          `\\bdocker${LEADING_FLAGS}\\s+volume\\s+rm\\b`,
+          `\\bdocker${LEADING_FLAGS}(\\s+compose|-compose)?\\s+down\\b[^|;&]*\\s-v\\b`,
+          `\\bdocker${LEADING_FLAGS}(\\s+compose|-compose)?\\s+down\\b[^|;&]*--volumes\\b`,
         ],
       },
     ],
@@ -34,6 +34,8 @@ export const ddDockerVolumeDestroy: Rule = {
       bash("docker compose down -v"),
       bash("docker-compose down --volumes"),
       bash("docker volume rm myapp_pgdata"),
+      bash("docker --context prod compose down -v"),
+      bash("docker -H unix:///var/run/docker.sock volume rm myapp_pgdata"),
     ],
     allow: [
       ...mentions("docker compose down -v"),

@@ -1,10 +1,16 @@
 // cspell:words azpipelines azurepipelines
-import { HTTP_BODY_MENTION, PRINT_MENTION, SEARCH_MENTION } from "../../exemptions.js";
+import {
+  HTTP_BODY_MENTION,
+  LEADING_FLAGS,
+  PRINT_MENTION,
+  SEARCH_MENTION,
+  SHELL_AND_MCP,
+} from "../../exemptions.js";
 import { bash, mentionInEcho, mentionInPost, mentionInSearch, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /** `git commit` as its own word, then anything up to the marker, across lines for a heredoc message. */
-const COMMIT = "(?:^|[\\s;&|(])git\\s+commit\\b[\\s\\S]*?";
+const COMMIT = `(?:^|[\\s;&|(])git${LEADING_FLAGS}\\s+commit\\b[\\s\\S]*?`;
 
 /**
  * A commit or push that tells CI not to run.
@@ -19,17 +25,17 @@ export const tiCiSkipMarker: Rule = {
   defaultAction: "warn",
   title: "Telling CI to skip a commit or push",
   description:
-    "Warns on a commit or push that tells CI not to run: a `git commit` whose message carries `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`, Azure Pipelines' `[skip azp]` family or `***NO_CI***`, or a `skip-checks: true` trailer, and `git push -o ci.skip` / `--push-option=ci.skip`. GitHub Actions, GitLab, Azure Pipelines, CircleCI and Bitbucket each honour some of these, in any letter case, so the change lands with no check run against it. Deliberately NOT matched: `skip-checks: false`, near misses such as `[ci-skip]` or `[skip deploy]`, other push options, and a commit message that only names `git push -o ci.skip`. Misses a message read from a file (`git commit -F msg.txt`), a marker added when a pull request is merged on the hosting site, and a push option set in git config. A quoted MENTION is not a use: a search, an `echo` or a `curl --data` body that only names this command is left alone, as long as every shell metacharacter stays inside the quotes. `git commit` is NOT one of those carriers here: the marker is read from the commit message, so a message that quotes `[skip ci]` does skip CI and still warns.",
+    "Warns on a commit or push that tells CI not to run: a `git commit` whose message carries `[skip ci]`, `[ci skip]`, `[no ci]`, `[skip actions]`, `[actions skip]`, Azure Pipelines' `[skip azp]` family or `***NO_CI***`, or a `skip-checks: true` trailer, and `git push -o ci.skip` / `--push-option=ci.skip`. GitHub Actions, GitLab, Azure Pipelines, CircleCI and Bitbucket each honour some of these, in any letter case, so the change lands with no check run against it. Deliberately NOT matched: `skip-checks: false`, near misses such as `[ci-skip]` or `[skip deploy]`, other push options, and a commit message that only names `git push -o ci.skip`. Misses a message read from a file (`git commit -F msg.txt`), a marker added when a pull request is merged on the hosting site, and a push option set in git config. A global flag between `git` and `commit`/`push` is tolerated (`git -C <dir> commit …`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, an `echo` or a `curl --data` body that only names this command is left alone, as long as every shell metacharacter stays inside the quotes. `git commit` is NOT one of those carriers here: the marker is read from the commit message, so a message that quotes `[skip ci]` does skip CI and still warns.",
   match: {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           `${COMMIT}\\[(?:skip\\s+ci|ci\\s+skip|no\\s+ci|skip\\s+actions|actions\\s+skip)\\]`,
           `${COMMIT}\\[(?:skip\\s+(?:azp|azpipelines|azurepipelines)|(?:azp|azpipelines|azurepipelines)\\s+skip)\\]`,
           `${COMMIT}(?:\\*\\*\\*NO_CI\\*\\*\\*|skip-checks:\\s*true\\b)`,
-          "(?:^|[;&|(]\\s*)git\\s+push\\b[^|;&]*?\\s(?:-o\\s*|--push-option(?:=|\\s+))ci\\.skip\\b",
+          `(?:^|[;&|(]\\s*)git${LEADING_FLAGS}\\s+push\\b[^|;&]*?\\s(?:-o\\s*|--push-option(?:=|\\s+))ci\\.skip\\b`,
         ],
       },
     ],
@@ -49,6 +55,8 @@ export const tiCiSkipMarker: Rule = {
       bash('git add -A && git commit -m "lint [ci skip]" && git push'),
       bash("git push -o ci.skip origin main"),
       bash("git push --push-option=ci.skip origin feature/x"),
+      bash('git --no-pager commit -m "wip [skip ci]"'),
+      bash("git -C /repo push -o ci.skip origin main"),
       pwsh('git commit -m "chore: bump version [skip ci]"'),
     ],
     allow: [

@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -19,7 +19,7 @@ export const gbAdminMerge: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bgh\\s+pr\\s+merge\\b[^|;&]*--admin\\b",
           "\\bgh\\s+api\\b[^|;&]*(-X\\s*|--method\\s+)(delete|put)\\b[^|;&]*protection\\b",

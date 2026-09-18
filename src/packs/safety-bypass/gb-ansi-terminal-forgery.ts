@@ -1,5 +1,10 @@
 // cspell:words OSC colour colourised mred neutralise setaf terminfo tput
-import { GIT_TEXT_MENTION, HTTP_BODY_MENTION, SEARCH_MENTION } from "../../exemptions.js";
+import {
+  GIT_TEXT_MENTION,
+  HTTP_BODY_MENTION,
+  SEARCH_MENTION,
+  SHELL_AND_MCP,
+} from "../../exemptions.js";
 import { bash, mentionInCommit, mentionInPost, mentionInSearch, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -23,7 +28,7 @@ export const gbAnsiTerminalForgery: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: ["\\b(?:echo|printf)\\b[^|;&]*(?:\\\\x1b|\\\\033|\\\\e)[[\\]]"],
       },
     ],

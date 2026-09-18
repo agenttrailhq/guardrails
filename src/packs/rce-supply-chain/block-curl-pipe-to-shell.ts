@@ -6,10 +6,10 @@ export const blockCurlPipeToShell: Rule = {
   id: "block-curl-pipe-to-shell",
   category: "rce-supply-chain",
   severity: "critical",
-  defaultAction: "require_approval",
-  title: "Approve curl/wget piped to a shell",
+  defaultAction: "block",
+  title: "Block curl/wget piped to a shell",
   description:
-    'Routes a downloaded script piped straight into a shell to human approval. Catches the shell named directly, behind a path (`| /bin/bash`), or behind sudo with its own flags (`| sudo -E bash -`) — the canonical NodeSource installer — and covers sh, bash, zsh, ksh and dash. The downloader and the pipe must be on the SAME line and in that order, with no second pipe between them. Does NOT match `curl … | jq .` or `| shasum`. MISSES the command-substitution spelling (see rce.eval-dynamic), and a download followed by a separate later execution. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt. `curl --data` is NOT one of those carriers here, because this rule\'s own trigger is a `curl`/`wget` pipeline: a POST body quoting a pipe-to-shell one-liner still asks.',
+    'Blocks a downloaded script piped straight into a shell — remote code execution — so the id and the verdict agree. Catches the shell named directly, behind a path (`| /bin/bash`), or behind sudo with its own flags (`| sudo -E bash -`) — the canonical NodeSource installer — and covers sh, bash, zsh, ksh and dash. The downloader and the pipe must be on the SAME line and in that order, with no second pipe between them. Does NOT match `curl … | jq .` or `| shasum`. MISSES the command-substitution spelling (see rce.eval-dynamic), and a download followed by a separate later execution. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt. `curl --data` is NOT one of those carriers here, because this rule\'s own trigger is a `curl`/`wget` pipeline: a POST body quoting a pipe-to-shell one-liner still blocks.',
   match: {
     any_of: [
       {

@@ -3,7 +3,7 @@
  * The eleven packs, and the order they are presented in.
  *
  * These ids are authoritative and shared with the rules authored against them,
- * and with the guard's `config.json` `enabledPacks`. Renaming one of these is a
+ * and with the guard's `config.json` `disabledPacks`. Renaming one of these is a
  * breaking change to a user's config file.
  *
  * Working-tree destruction leads: destructive git commands are the most frequently

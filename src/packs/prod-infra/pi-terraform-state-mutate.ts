@@ -1,6 +1,6 @@
 // cspell:words untaint
 
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { LEADING_FLAGS, QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -17,16 +17,16 @@ export const piTerraformStateMutate: Rule = {
   defaultAction: "require_approval",
   title: "Hand-editing Terraform state",
   description:
-    'Mutates the Terraform state file directly — `state rm`, `state mv`, `state push`, `taint`, `untaint`, `force-unlock`. None of these changes any infrastructure by itself; they change what the NEXT apply believes exists, which is how a `state rm` turns into a destroyed resource two commands later. The read-only commands are deliberately NOT matched (`state list`, `state show`, `state pull`, `show`). It cannot see which backend or workspace is selected. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Mutates the Terraform state file directly — `state rm`, `state mv`, `state push`, `taint`, `untaint`, `force-unlock`. None of these changes any infrastructure by itself; they change what the NEXT apply believes exists, which is how a `state rm` turns into a destroyed resource two commands later. The read-only commands are deliberately NOT matched (`state list`, `state show`, `state pull`, `show`). It cannot see which backend or workspace is selected. A global option between the tool and `state`/`taint`/`force-unlock` is tolerated (`terraform -chdir=<dir> state rm …`, `--no-color`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
-          "\\b(terraform|tofu)\\s+state\\s+(rm|mv|push|replace-provider)\\b",
-          "\\b(terraform|tofu)\\s+(taint|untaint)\\b",
-          "\\b(terraform|tofu)\\s+force-unlock\\b",
+          `\\b(terraform|tofu)${LEADING_FLAGS}\\s+state\\s+(rm|mv|push|replace-provider)\\b`,
+          `\\b(terraform|tofu)${LEADING_FLAGS}\\s+(taint|untaint)\\b`,
+          `\\b(terraform|tofu)${LEADING_FLAGS}\\s+force-unlock\\b`,
         ],
       },
     ],
@@ -38,6 +38,7 @@ export const piTerraformStateMutate: Rule = {
       bash("terraform state mv aws_s3_bucket.a aws_s3_bucket.b"),
       bash("terraform taint aws_instance.web"),
       bash("terraform force-unlock 1234abcd"),
+      bash("terraform -chdir=/infra state rm aws_db_instance.main"),
     ],
     allow: [
       ...mentions("terraform state rm aws_db_instance.main"),

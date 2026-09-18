@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -18,7 +18,7 @@ export const ddAcceptDataLoss: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "--accept-data-loss\\b",
           "--force-reset\\b",

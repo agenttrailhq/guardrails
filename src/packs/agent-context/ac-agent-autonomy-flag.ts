@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -28,7 +28,7 @@ export const acAgentAutonomyFlag: Rule = {
       // Claude Code and Codex.
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\s--(?:allow-)?dangerously-skip-permissions\\b",
           "\\s--permission-mode(?:\\s+|=)bypassPermissions\\b",
@@ -43,7 +43,7 @@ export const acAgentAutonomyFlag: Rule = {
       // Gemini, Cursor's agent and Aider.
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           `${AT_COMMAND}(?:gemini|cursor-agent)${ARGS}--yolo\\b`,
           `${AT_COMMAND}gemini${ARGS}-y\\b`,

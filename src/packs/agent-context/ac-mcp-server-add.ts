@@ -1,5 +1,5 @@
 // cspell:words modelcontextprotocol
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, file, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -28,7 +28,7 @@ export const acMcpServerAdd: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           `${AT_COMMAND}claude(?:-code)?${ARGS}mcp\\s+add(?:-json|-from-claude-desktop)?\\b`,
           `${AT_COMMAND}(?:codex|gemini)${ARGS}mcp\\s+add\\b`,

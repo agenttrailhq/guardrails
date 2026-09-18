@@ -108,8 +108,8 @@ describe("distinguishes syntax from literal characters", () => {
 /**
  * The honest limit, asserted so it is documented in behavior and not only in a
  * comment. `(a|a)*` is quadratic — slow, not exponential — and is accepted. The
- * 200-character cap is what keeps that acceptable; a hard guarantee would need
- * a non-backtracking engine.
+ * length cap (`DETAIL_MATCHES_MAX_PATTERN_LENGTH`) is what keeps that acceptable; a
+ * hard guarantee would need a non-backtracking engine.
  */
 describe("the documented limit", () => {
   it("accepts star height 1 even when it can be quadratic", () => {

@@ -1,6 +1,6 @@
 // cspell:words bbcdedit bcdedit bvssadmin bwbadmin recoveryenabled shadowcopy systemstatebackup tmutil vssadmin wbadmin
 
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -24,7 +24,7 @@ export const ddShadowCopyDelete: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bvssadmin\\b[^|;&]*\\bdelete\\s+shadows\\b",
           "\\bwbadmin\\s+delete\\s+(catalog|systemstatebackup)\\b",

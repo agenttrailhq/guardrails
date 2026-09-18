@@ -1,6 +1,6 @@
 // cspell:words ecutionpolicy executionpolicy
 
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -21,7 +21,7 @@ export const gbExecutionPolicyBypass: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bset-executionpolicy\\b[^|;&]*\\b(bypass|unrestricted)\\b",
           "\\b(powershell|pwsh)(\\.exe)?\\b[^|;&]*-ex(ecutionpolicy)?\\s+(bypass|unrestricted)\\b",

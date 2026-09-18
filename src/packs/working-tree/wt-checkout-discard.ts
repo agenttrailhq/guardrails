@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { LEADING_FLAGS, QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -18,17 +18,17 @@ export const wtCheckoutDiscard: Rule = {
   defaultAction: "block",
   title: "git checkout used to discard working-tree changes",
   description:
-    'Overwrites files in the working tree from the index or from another commit, discarding uncommitted edits. Matches the discard spellings only — `git checkout -- <path>`, a bare `git checkout .`, and the `-f`/`--force` forms. It deliberately does NOT match an ordinary branch switch (`git checkout main`, `git checkout -b feature/x`), which is the same command doing something else entirely. It also MISSES `git checkout <commit> <path>` written without the `--` separator. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Overwrites files in the working tree from the index or from another commit, discarding uncommitted edits. Matches the discard spellings only — `git checkout -- <path>`, a bare `git checkout .`, and the `-f`/`--force` forms. It deliberately does NOT match an ordinary branch switch (`git checkout main`, `git checkout -b feature/x`), which is the same command doing something else entirely. It also MISSES `git checkout <commit> <path>` written without the `--` separator. Global flags between `git` and `checkout` are tolerated (`git -C <dir> checkout -- .`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
-          "\\bgit\\s+checkout\\s+--\\s",
-          "\\bgit\\s+checkout\\s+\\.(\\s|$)",
-          "\\bgit\\s+checkout\\s+-f\\b",
-          "\\bgit\\s+checkout\\s+--force\\b",
+          `\\bgit${LEADING_FLAGS}\\s+checkout\\s+--\\s`,
+          `\\bgit${LEADING_FLAGS}\\s+checkout\\s+\\.(\\s|$)`,
+          `\\bgit${LEADING_FLAGS}\\s+checkout\\s+-f\\b`,
+          `\\bgit${LEADING_FLAGS}\\s+checkout\\s+--force\\b`,
         ],
       },
     ],
@@ -40,6 +40,8 @@ export const wtCheckoutDiscard: Rule = {
       bash("git checkout -- ."),
       bash("git checkout ."),
       bash("git checkout -f"),
+      bash("git -C /repo checkout -- src/api.ts"),
+      bash("git --no-pager checkout -f"),
     ],
     allow: [
       ...mentions("git checkout -- src/api.ts"),

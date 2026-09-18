@@ -1,5 +1,5 @@
 // cspell:words cloudflared exfiltration frpc localtunnel pinggy serveo tailnet
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -17,21 +17,21 @@ export const exTunnelExpose: Rule = {
   defaultAction: "require_approval",
   title: "Exposing a local port through a public tunnel",
   description:
-    'Holds a command that puts a local service on a public URL through a tunnel: `ngrok http|tcp|start`, `cloudflared tunnel`, `localtunnel` / `lt --port`, `tailscale funnel`, an `ssh -R` remote forward (including `-NR`), the `serveo.net` and `localhost.run` SSH relays, `bore local`, `frpc`, and `pinggy.io`. Each reaches past the firewall and gives the outside world a route in, which is a demo convenience and an exfiltration channel both. Deliberately NOT matched: `ssh -L` (a local forward, inbound to you) and `ssh -D` (a SOCKS proxy), `ngrok config check` / `--version`, `cloudflared --version`, and `tailscale status` / `serve` (which stays inside the tailnet). MISSES a tunnel binary run under another name, a raw `ssh -R` to a private relay this list does not name, and `frp` driven from its config file rather than the `frpc` command. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Holds a command that puts a local service on a public URL through a tunnel: `ngrok http|tcp|start`, `cloudflared tunnel`, `localtunnel` / `lt --port`, `tailscale funnel`, an `ssh -R` remote forward (including `-NR`, matched only when `ssh` is the command being run), the `serveo.net` and `localhost.run` SSH relays, `bore local`, `frpc` invoked with a flag (`frpc -c …`), and `pinggy.io`. Each reaches past the firewall and gives the outside world a route in, which is a demo convenience and an exfiltration channel both. Deliberately NOT matched: `ssh -L` (a local forward, inbound to you) and `ssh -D` (a SOCKS proxy), `ngrok config check` / `--version`, `cloudflared --version`, `tailscale status` / `serve` (which stays inside the tailnet), `ssh-keygen -R host` (host-key removal, not a tunnel), a `-R` that appears only inside a quoted remote command (`ssh host "grep -R …"`), and a path or filename that merely contains `frpc` (`scripts/frpc-parser.js`). MISSES a tunnel binary run under another name, a raw `ssh -R` to a private relay this list does not name, `frp` driven from its config file rather than the `frpc` command, `sudo frpc`, and an `frpc` subcommand invoked without a leading flag. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bngrok\\s+(?:http|tcp|start)\\b",
           "\\bcloudflared\\s+tunnel\\b",
           "\\b(?:localtunnel\\s+--port|lt\\s+--port|npx\\s+(?:--yes\\s+)?localtunnel)\\b",
           "\\btailscale\\s+funnel\\b",
-          "\\bssh\\b[^|;&]*\\s-[A-Za-z]*R(?![A-Za-z])",
+          "(?:^|[\\s;&|(/])ssh(?=\\s)[^|;&\"'<>]*\\s-[A-Za-z]*R(?![A-Za-z])",
           "\\b(?:serveo\\.net|localhost\\.run)\\b",
           "\\bbore\\s+local\\b",
-          "\\bfrpc\\b",
+          "(?:^|[;&|(]\\s*|/)frpc\\s+-",
           "\\bpinggy\\.io\\b",
         ],
       },
@@ -63,6 +63,10 @@ export const exTunnelExpose: Rule = {
       bash("tailscale status"),
       bash("git clone https://github.com/ekzhang/bore"),
       bash("ssh deploy@host 'systemctl restart api'"),
+      bash("ssh-keygen -R old.example.com"),
+      bash('ssh deploy@host "grep -R TODO /srv"'),
+      bash("node scripts/frpc-parser.js"),
+      bash("cat frpc.toml"),
     ],
   },
 };

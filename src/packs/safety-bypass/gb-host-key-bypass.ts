@@ -1,6 +1,6 @@
 // cspell:words stricthostkeychecking userknownhostsfile
 
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -21,7 +21,7 @@ export const gbHostKeyBypass: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "stricthostkeychecking[= ]\\s*no\\b",
           "userknownhostsfile[= ]\\s*/dev/null",
@@ -41,6 +41,7 @@ export const gbHostKeyBypass: Rule = {
       ...mentions("ssh -o StrictHostKeyChecking=no deploy@example.com"),
       bash("ssh -T git@github.com"),
       bash("ssh-keygen -t ed25519 -C dev@example.com"),
+      bash("ssh-keygen -R old.example.com"),
       bash("git clone git@github.com:o/r.git"),
       bash("cat ~/.ssh/known_hosts | wc -l"),
     ],

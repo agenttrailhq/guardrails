@@ -1,5 +1,5 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
-import { bash, mentions } from "../../fixtures.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
+import { bash, mcp, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /**
@@ -24,7 +24,7 @@ export const ddRmRfAbsolute: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: ["\\brm\\s+-[a-z]*r[a-z]*f\\s+/", "\\brm\\s+-[a-z]*f[a-z]*r\\s+/"],
       },
     ],
@@ -36,6 +36,9 @@ export const ddRmRfAbsolute: Rule = {
       bash("rm -rf /etc"),
       bash("rm -Rf /var/lib/postgresql"),
       bash("rm -rf /usr/local/bin"),
+      bash('git commit -m "x" && rm -rf /'),
+      bash('echo "rm -rf /" | bash'),
+      mcp({ command: "rm -rf /" }),
     ],
     allow: [
       ...mentions("rm -rf /"),
@@ -43,6 +46,8 @@ export const ddRmRfAbsolute: Rule = {
       bash("rm -rf build/"),
       bash("rm -f /tmp/app.pid"),
       bash("rm -rf $TMPDIR/scratch"),
+      bash('wc -l < log; echo "--- rm -rf / ---"; grep -c x log'),
+      mcp({ command: "rm -rf ./node_modules" }),
     ],
   },
 };

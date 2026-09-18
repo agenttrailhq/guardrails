@@ -46,6 +46,23 @@ export function file(filePath: string, tool = "Edit"): Fixture {
   return { tool, file_path: filePath };
 }
 
+/**
+ * A fixture on the command channel, from an MCP tool.
+ *
+ * The guard hands the engine an MCP call's serialized `tool_input` as the `detail`
+ * text (`JSON.stringify(input)`), so a fixture mirrors that: the `input` object is
+ * serialized and its JSON becomes the command. `tool` defaults to a generic MCP
+ * name; the widened `{Bash,PowerShell,mcp__*}` label matches any `mcp__*`.
+ *
+ * The point is to prove a command SHAPE carried by an MCP server still fires the
+ * rule (`{ command: "rm -rf /" }`), and that a serialized MENTION is NOT exempted:
+ * the `none_of` carriers are anchored to the shell, and JSON does not start with a
+ * carrier verb.
+ */
+export function mcp(input: Record<string, unknown>, tool = "mcp__server__run"): Fixture {
+  return { tool, command: JSON.stringify(input) };
+}
+
 // ── Quoted-mention near misses ─────────────────────────────────────────────
 
 /**

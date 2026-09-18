@@ -1,6 +1,11 @@
 // cspell:words sslverify
 
-import { GIT_TEXT_MENTION, PRINT_MENTION, SEARCH_MENTION } from "../../exemptions.js";
+import {
+  GIT_TEXT_MENTION,
+  PRINT_MENTION,
+  SEARCH_MENTION,
+  SHELL_AND_MCP,
+} from "../../exemptions.js";
 import { bash, mentionInCommit, mentionInEcho, mentionInSearch } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -21,7 +26,7 @@ export const rceTlsVerifyOff: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bcurl\\b[^|;&]*\\s-[a-z]*k[a-z]*(\\s|$)",
           "\\bcurl\\b[^|;&]*--insecure\\b",

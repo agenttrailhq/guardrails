@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { LEADING_FLAGS, QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -20,21 +20,21 @@ export const wtRestorePath: Rule = {
   defaultAction: "block",
   title: "git restore discards uncommitted changes to a path",
   description:
-    'Overwrites files in the working tree from the index, discarding uncommitted edits to them. `git restore --staged` is deliberately NOT matched: it only unstages, and the file on disk is untouched. The cost of that exclusion is a known miss — `git restore --staged --worktree <path>` DOES discard and is exempted here, because expressing the distinction needs a negative lookahead this corpus does not use. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Overwrites files in the working tree from the index, discarding uncommitted edits to them. `git restore --staged` is deliberately NOT matched: it only unstages, and the file on disk is untouched. The cost of that exclusion is a known miss — `git restore --staged --worktree <path>` DOES discard and is exempted here, because expressing the distinction needs a negative lookahead this corpus does not use. Global flags between `git` and `restore` are tolerated on both the block and the `--staged` exemption (`git -C <dir> restore .`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
-        detail_matches: ["\\bgit\\s+restore\\b"],
+        label: SHELL_AND_MCP,
+        detail_matches: [`\\bgit${LEADING_FLAGS}\\s+restore\\b`],
       },
     ],
     none_of: [
       ...QUOTED_MENTION,
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
-        detail_matches: ["\\bgit\\s+restore\\s+--staged\\b"],
+        label: SHELL_AND_MCP,
+        detail_matches: [`\\bgit${LEADING_FLAGS}\\s+restore\\s+--staged\\b`],
       },
     ],
   },
@@ -43,10 +43,13 @@ export const wtRestorePath: Rule = {
       bash("git restore src/api.ts"),
       bash("git restore ."),
       bash("git restore --source=HEAD~2 src/api.ts"),
+      bash("git -C /repo restore src/api.ts"),
+      bash("git --no-pager restore ."),
     ],
     allow: [
       ...mentions("git restore src/api.ts"),
       bash("git restore --staged src/api.ts"),
+      bash("git -C /repo restore --staged src/api.ts"),
       bash("git stash push -m wip src/api.ts"),
       bash("git status --short"),
     ],

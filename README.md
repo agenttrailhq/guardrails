@@ -174,6 +174,18 @@ At most four quoted arguments are recognised. A carrier that can be made to exec
 the checker does not have. And an MCP tool whose input carries the same text is not exempt either,
 because exempting a JSON blob would exempt a shell-running MCP server along with it.
 
+**MCP coverage.** A command rule fires on `Bash`, `PowerShell` *and* any `mcp__*` tool: the guard hands
+the checker an MCP call's serialized `tool_input` as the same command text every command rule reads, so
+a command shape run through an MCP server — `{"command":"rm -rf /"}` — is caught, not ignored. Two
+honest limits follow from that. First, a rule whose pattern is anchored to the start of the command
+(`^…` or a command-position class) may not fire inside the JSON, where the shape sits after a `"`
+rather than at a command boundary; the `\b`-anchored rules — most of the corpus — do fire. Second, the
+quoted-mention exemptions are shell-only, so an MCP payload that merely *names* a command in a text
+field (`{"title":"fix the rm -rf / bug"}`) is matched the same as one that runs it — a JSON blob cannot
+be told apart from a shell-running MCP server. File rules match by path on whichever file tool a client
+uses. No rule is shell-only by design; a rule that does not reach the MCP channel does so because its
+pattern, not its label, does not match the serialized shape.
+
 ## What these rules deliberately do not catch
 
 Stated here rather than discovered later. Every one is a real limit of the format, not something

@@ -42,8 +42,13 @@ export const ActionSchema = z.enum(ACTIONS);
 
 // ── detail_matches: regex limits, mirrored from the engine ───────────────────
 
-/** Longest accepted `detail_matches` pattern. Long enough for any real rule. */
-export const DETAIL_MATCHES_MAX_PATTERN_LENGTH = 200;
+/**
+ * Longest accepted `detail_matches` pattern. Long enough for any real rule; raised
+ * from 200 to fit the compound-command quoted-mention exemption, whose longest arm
+ * (a carrier wrapped in a bounded chain of read-only surrounding segments) is ~300.
+ * Kept in lockstep with the engine's own copy of this limit.
+ */
+export const DETAIL_MATCHES_MAX_PATTERN_LENGTH = 320;
 
 /** Most `detail_matches` patterns allowed on one condition (they are ORed). */
 export const DETAIL_MATCHES_MAX_PATTERNS = 10;

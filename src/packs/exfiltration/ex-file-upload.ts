@@ -1,5 +1,10 @@
 // cspell:words bscp exfil exfiltration
-import { GIT_TEXT_MENTION, PRINT_MENTION, SEARCH_MENTION } from "../../exemptions.js";
+import {
+  GIT_TEXT_MENTION,
+  PRINT_MENTION,
+  SEARCH_MENTION,
+  SHELL_AND_MCP,
+} from "../../exemptions.js";
 import { bash, mentionInCommit, mentionInEcho, mentionInSearch, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -22,7 +27,7 @@ export const exFileUpload: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bcurl\\b[^|;&]*\\s(?:-T|--upload-file)\\s",
           "\\bcurl\\b[^|;&]*\\s-F\\s+\\S*=@",

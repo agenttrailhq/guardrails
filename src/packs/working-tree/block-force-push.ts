@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { LEADING_FLAGS, QUOTED_MENTION } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -13,12 +13,15 @@ export const blockForcePush: Rule = {
   defaultAction: "block",
   title: "Block git force-push",
   description:
-    'Overwrites a remote branch\'s history, destroying commits other people may already have pulled. The command must contain the literal `git push` and the flag must sit in the same pipeline segment, so searching for the phrase is not blocked. The safer `--force-with-lease` form IS still blocked; exempting it needs a negative lookahead this corpus does not use. MISSES an alias such as `git pf`, and a force-push issued by a wrapper script whose own text does not say `git push`. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Overwrites a remote branch\'s history, destroying commits other people may already have pulled. The command must contain `git push` and the force flag must sit in the same pipeline segment, so searching for the phrase is not blocked. A global flag between `git` and `push` is tolerated (`git -C <dir> push --force`, `git --no-pager push …`), and an absolute tool path such as `/usr/bin/git` still matches. The safer `--force-with-lease` form IS still blocked; exempting it needs a negative lookahead this corpus does not use. MISSES an alias such as `git pf`, and a force-push issued by a wrapper script whose own text does not say `git push`. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       {
         kind: "execute_tool",
-        detail_matches: ["\\bgit\\s+push\\b[^|;&]*--force", "\\bgit\\s+push\\b[^|;&]*\\s-f\\b"],
+        detail_matches: [
+          `\\bgit${LEADING_FLAGS}\\s+push\\b[^|;&]*--force`,
+          `\\bgit${LEADING_FLAGS}\\s+push\\b[^|;&]*\\s-f\\b`,
+        ],
       },
     ],
     none_of: [...QUOTED_MENTION],
@@ -29,6 +32,9 @@ export const blockForcePush: Rule = {
       bash("git push --force origin main"),
       bash("git push -f origin feature/x"),
       bash("git push origin main --force-with-lease"),
+      bash("git -C /repo push --force origin main"),
+      bash("git --no-pager push --force"),
+      bash("/usr/bin/git push -f origin main"),
     ],
     allow: [
       ...mentions("git push origin main --force"),

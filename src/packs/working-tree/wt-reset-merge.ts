@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { LEADING_FLAGS, QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -16,13 +16,16 @@ export const wtResetMerge: Rule = {
   defaultAction: "require_approval",
   title: "git reset --merge / --keep can discard local changes",
   description:
-    'Resets with `--merge` or `--keep`, both of which can silently drop uncommitted changes to files that differ between HEAD and the target commit. They read as the cautious options, which is why they are worth a prompt rather than a block. Does NOT match `git reset --soft` or a bare `git reset`, neither of which touches the working tree, and it does not cover `git merge --abort`. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Resets with `--merge` or `--keep`, both of which can silently drop uncommitted changes to files that differ between HEAD and the target commit. They read as the cautious options, which is why they are worth a prompt rather than a block. Does NOT match `git reset --soft` or a bare `git reset`, neither of which touches the working tree, and it does not cover `git merge --abort`. Global flags between `git` and `reset` are tolerated (`git -C <dir> reset --merge`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
-        detail_matches: ["\\bgit\\s+reset\\s+--merge\\b", "\\bgit\\s+reset\\s+--keep\\b"],
+        label: SHELL_AND_MCP,
+        detail_matches: [
+          `\\bgit${LEADING_FLAGS}\\s+reset\\s+--merge\\b`,
+          `\\bgit${LEADING_FLAGS}\\s+reset\\s+--keep\\b`,
+        ],
       },
     ],
     none_of: [...QUOTED_MENTION],
@@ -32,6 +35,8 @@ export const wtResetMerge: Rule = {
       bash("git reset --merge"),
       bash("git reset --keep origin/main"),
       bash("git reset --merge HEAD~1"),
+      bash("git -C /repo reset --merge"),
+      bash("git --no-pager reset --keep origin/main"),
     ],
     allow: [
       ...mentions("git reset --merge"),

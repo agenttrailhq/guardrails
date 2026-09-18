@@ -1,4 +1,4 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -18,7 +18,7 @@ export const requireApprovalRmRf: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\brm\\s+-[a-z]*r[a-z]*f",
           "\\brm\\s+-[a-z]*f[a-z]*r",
@@ -31,7 +31,7 @@ export const requireApprovalRmRf: Rule = {
       ...QUOTED_MENTION,
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\brm\\s+-\\S+\\s+(\\./)?(node_modules|dist|build|out|coverage|target|\\.next|\\.turbo|\\.cache|\\.vite|\\.parcel-cache)(/|\\b)",
         ],

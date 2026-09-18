@@ -1,6 +1,11 @@
 // cspell:words ncat
 
-import { GIT_TEXT_MENTION, PRINT_MENTION, SEARCH_MENTION } from "../../exemptions.js";
+import {
+  GIT_TEXT_MENTION,
+  PRINT_MENTION,
+  SEARCH_MENTION,
+  SHELL_AND_MCP,
+} from "../../exemptions.js";
 import { bash, mentionInCommit, mentionInEcho, mentionInSearch } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -25,7 +30,7 @@ export const seSecretEgress: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bcurl\\b[^|;&]*(-d|--data|--data-binary|--data-raw|-F|--form)\\s*@[^|;&]*(\\.env|\\.pem|id_rsa|credentials)",
           "\\bcat\\s+[^|;&]*(\\.env|\\.pem|id_rsa|credentials)[^|;&]*\\|[^|;&]*\\b(curl|wget|nc|ncat)\\b",

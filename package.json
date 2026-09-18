@@ -1,8 +1,17 @@
 {
   "name": "@agenttrail/guardrails",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "The agenttrail guard rule corpus, its self-contained schema, and its fixtures.",
+  "keywords": [
+    "guardrails",
+    "ai-agent",
+    "agent-security",
+    "claude-code",
+    "cursor",
+    "security-rules",
+    "policy"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/agenttrailhq/guardrails.git"

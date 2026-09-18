@@ -3,11 +3,11 @@
  * The pack registry.
  *
  * The eleven ids are shared with the rules that are authored against them and
- * with the guard's `config.json` `enabledPacks`, so this test pins the list
+ * with the guard's `config.json` `disabledPacks`, so this test pins the list
  * literally rather than deriving it from itself.
  *
  * A pack id also appears in a user's config file, so renaming one silently
- * disables the rules they had enabled. This test is what makes that rename show
+ * re-enables a pack they had turned off. This test is what makes that rename show
  * up as a red build instead of a support ticket.
  */
 

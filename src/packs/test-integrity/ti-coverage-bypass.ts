@@ -1,5 +1,5 @@
 // cspell:words nycrc pytest
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -23,7 +23,7 @@ export const tiCoverageBypass: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           `\\s--pass-?with-?no-?tests(?:=true)?${END}`,
           `\\s--no-cov${END}`,

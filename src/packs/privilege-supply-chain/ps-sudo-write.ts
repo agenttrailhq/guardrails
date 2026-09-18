@@ -1,5 +1,5 @@
-import { QUOTED_MENTION } from "../../exemptions.js";
-import { bash, mentions } from "../../fixtures.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
+import { bash, mcp, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /**
@@ -19,7 +19,7 @@ export const psSudoWrite: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bsudo\\s+(tee|dd)\\b",
           "\\bsudo\\s+(cp|mv|rm|ln|install|chown|chmod)\\b",
@@ -36,6 +36,7 @@ export const psSudoWrite: Rule = {
       bash("sudo cp dist/app /usr/local/bin/app"),
       bash("sudo rm -rf /var/lib/app"),
       bash('sudo sh -c "echo x > /etc/motd"'),
+      mcp({ command: "sudo cp dist/app /usr/local/bin/app" }),
     ],
     allow: [
       ...mentions("echo 127.0.0.1 x | sudo tee -a /etc/hosts"),

@@ -74,11 +74,18 @@
  *
  * ── Honest coverage limits ──────────────────────────────────────────────────
  *
- * - The carrier must be the first word, apart from a single leading `sudo`, which
- *   is tolerated because it changes privilege rather than semantics — `sudo grep`
- *   still searches, and no rule triggers on it (`ps.sudo-write` fires on
- *   `sudo tee|dd|cp|mv|rm|ln|install|chown|chmod|sh`, none of them a carrier).
- *   A RUNNER prefix is not tolerated: `pnpm exec rg …`, `npx …` and
+ * - The carrier need not be the first word: it may follow, and be followed by, up
+ *   to two QUIET segments — read-only inspection commands (`wc`, `cat`, `head`,
+ *   `tail`, `ls`, `grep`/family, `rg`) separated by `;`, `&&`, `||` or a pipe — so
+ *   `wc -l < log; echo "…rm -rf /…"; grep -c x log` is exempt. That is sound
+ *   because a quiet segment provably neither writes nor executes: `sort` (`-o`,
+ *   `--compress-program`), `find` (`-exec`), `awk`/`sed`, `tee`/`dd` and `git`
+ *   (`push`/`reset`) are NOT quiet, so `git commit -m "x" && rm -rf /`,
+ *   `echo "…" | bash` and `sort … ; echo …` all still deny. A quiet segment carries
+ *   no quote, so it cannot hide a mention; the mention is in the CARRIER. A single
+ *   leading `sudo` before the CARRIER is still tolerated (it changes privilege, not
+ *   meaning; `ps.sudo-write` fires on `sudo tee|dd|cp|mv|rm|ln|install|chown|chmod|sh`,
+ *   none a carrier). A RUNNER prefix is not tolerated: `pnpm exec rg …`, `npx …` and
  *   `xargs -0 grep …` are not exempt, because "some program eventually execs a
  *   search" is a much weaker claim than "this command is a search".
  * - At most four quoted arguments are recognised. A fifth is not exempt.
@@ -109,6 +116,28 @@
 import type { MatchCondition } from "./schema.js";
 
 /**
+ * The `label` glob for a rule that reads a COMMAND: the two shells plus any MCP tool.
+ *
+ * A command-channel rule describes a shape — `git push --force`, `rm -rf /` — and
+ * that shape reaches the guard on more than one tool. Claude Code's own hooks route
+ * `Bash`, `PowerShell` AND `mcp__*` to the guard, and the MCP channel carries the
+ * serialized tool input as the same `detail` text every command matcher reads. A
+ * rule pinned to `{Bash,PowerShell}` alone silently ignores the MCP channel, so an
+ * MCP server that runs shell commands is unguarded. This glob widens the label to
+ * the MCP tools as well, and is referenced rather than copied so the set cannot
+ * drift rule to rule.
+ *
+ * `mcp__*` matches the WHOLE label (picomatch matches the entire tool name), so it
+ * catches any `mcp__<server>__<tool>` — including Cursor's `mcp__cursor__*` — and
+ * nothing else. It does NOT widen the `none_of` exemptions, which stay anchored to
+ * the shell: a quoted MENTION is a shell shape, and an MCP tool's serialized JSON
+ * does not start with a carrier verb, so a command shape inside an MCP payload is
+ * matched, not exempted. Whether that shape is an execution or only a field named
+ * like one is a limit the README states, not one this glob can tell apart.
+ */
+export const SHELL_AND_MCP = "{Bash,PowerShell,mcp__*}";
+
+/**
  * Text outside a quoted run, in a carrier that must not chain another command.
  * Excludes both quote characters and every shell metacharacter, `|` included.
  */
@@ -126,11 +155,45 @@ const OUTSIDE_PIPEABLE = "[^\"';&`$<>()]";
  */
 const QUOTED = '(?:"(?:[^"`$]|\\$[^("])*"|\'[^\']*\')';
 
-/** Up to four quoted arguments separated by safe text, then a safe tail. */
-const args = (tail: string) => `(?:${OUTSIDE}*${QUOTED}){0,4}${tail}*$`;
+/**
+ * A read-only inspection tool: it reads, counts or searches, and — unlike `sort`
+ * (`-o`, `--compress-program`), `find` (`-exec`, `-delete`), `awk`/`sed` (which run
+ * programs), `tee`/`dd` (which write) or `git` (which can push/reset) — has no flag
+ * that writes a file or runs another program. That is what lets a compound command
+ * built only from these AROUND a carrier be exempt without hiding an execution.
+ */
+const QUIET_TOOL = "(?:wc|cat|head|tail|ls|grep|egrep|rg)";
+
+/**
+ * One quiet segment: a read-only tool and arguments with no quote, pipe, command
+ * separator, substitution, subshell, or write-redirect. A read-redirect `<` is
+ * allowed (`wc -l < log`); `>` is not, and `(` bars a `<(…)` process substitution.
+ * It carries no quote, so it cannot hold a quoted mention — the mention lives in the
+ * CARRIER segment; these only surround it.
+ */
+const QUIET_SEG = `${QUIET_TOOL}\\b[^"'|;&\`$>()]*`;
+
+/** A separator between segments: `;`, `&&`, `||`, or a pipe. */
+const CHAIN = "(?:;|&&|\\|\\||\\|)";
+
+/**
+ * Up to two quiet segments BEFORE the carrier (each ending in a separator), and up
+ * to two AFTER it. This is what lets a NON-LEADING carrier be exempt — `wc -l < log;
+ * echo "…"; grep -c x log` — without becoming a bypass: every OTHER segment must
+ * itself be a quiet read-only command, so `git commit -m "x" && rm -rf /` (the `rm`
+ * is not quiet), `echo "…" | bash` (`bash` is not quiet), `echo "$(…)"` (the
+ * substitution is barred inside the quote) and `sort … ; echo …` (`sort` can write)
+ * are all still denied. Bounded `{0,2}`, so the fragment stays linear (no nested
+ * unbounded quantifier) and inside the length cap.
+ */
+const LEAD = `(?:${QUIET_SEG}\\s*${CHAIN}\\s*){0,2}`;
+const TRAIL = `(?:\\s*${CHAIN}\\s*${QUIET_SEG}){0,2}`;
+
+/** Up to four quoted arguments separated by safe text, then a safe tail, then quiet segments. */
+const args = (tail: string) => `(?:${OUTSIDE}*${QUOTED}){0,4}${tail}*${TRAIL}$`;
 
 /** As {@link args}, but at least one quoted argument is required. */
-const quotedArgs = (tail: string) => `(?:${OUTSIDE}*${QUOTED}){1,4}${tail}*$`;
+const quotedArgs = (tail: string) => `(?:${OUTSIDE}*${QUOTED}){1,4}${tail}*${TRAIL}$`;
 
 /**
  * A read-only search: `grep`, `rg`, `ag`, `ack`, PowerShell's `Select-String`.
@@ -142,7 +205,7 @@ const quotedArgs = (tail: string) => `(?:${OUTSIDE}*${QUOTED}){1,4}${tail}*$`;
 export const SEARCH_MENTION: MatchCondition = {
   kind: "execute_tool",
   detail_matches: [
-    `^\\s*(?:sudo\\s+)?(?:grep|egrep|fgrep|rg|ag|ack|select-string)\\b${args(OUTSIDE_PIPEABLE)}`,
+    `^\\s*${LEAD}(?:sudo\\s+)?(?:grep|egrep|fgrep|rg|ag|ack|select-string)\\b${args(OUTSIDE_PIPEABLE)}`,
   ],
 };
 
@@ -157,7 +220,7 @@ export const SEARCH_MENTION: MatchCondition = {
 export const GIT_TEXT_MENTION: MatchCondition = {
   kind: "execute_tool",
   detail_matches: [
-    `^\\s*(?:sudo\\s+)?git\\s+(?:commit|log|show|blame|grep|tag)\\b${args(OUTSIDE_PIPEABLE)}`,
+    `^\\s*${LEAD}(?:sudo\\s+)?git\\s+(?:commit|log|show|blame|grep|tag)\\b${args(OUTSIDE_PIPEABLE)}`,
   ],
 };
 
@@ -170,7 +233,9 @@ export const GIT_TEXT_MENTION: MatchCondition = {
  */
 export const PRINT_MENTION: MatchCondition = {
   kind: "execute_tool",
-  detail_matches: [`^\\s*(?:sudo\\s+)?(?:echo|printf|write-host|write-output)\\b${args(OUTSIDE)}`],
+  detail_matches: [
+    `^\\s*${LEAD}(?:sudo\\s+)?(?:echo|printf|write-host|write-output)\\b${args(OUTSIDE)}`,
+  ],
 };
 
 /**
@@ -187,7 +252,7 @@ export const PRINT_MENTION: MatchCondition = {
  */
 export const HTTP_BODY_MENTION: MatchCondition = {
   kind: "execute_tool",
-  detail_matches: [`^\\s*(?:sudo\\s+)?(?:curl|wget)\\b${quotedArgs(OUTSIDE_PIPEABLE)}`],
+  detail_matches: [`^\\s*${LEAD}(?:sudo\\s+)?(?:curl|wget)\\b${quotedArgs(OUTSIDE_PIPEABLE)}`],
 };
 
 /**
@@ -202,3 +267,51 @@ export const QUOTED_MENTION: readonly MatchCondition[] = [
   PRINT_MENTION,
   HTTP_BODY_MENTION,
 ];
+
+// ── Leading global flags, between a tool and its subcommand ──────────────────
+
+/**
+ * Zero or more global flags sitting between a command and its subcommand.
+ *
+ * A command-channel rule that pins a tool to its subcommand CONTIGUOUSLY —
+ * `git\s+reset`, `aws\s+s3`, `kubectl\s+delete`, `docker\s+volume` — is defeated
+ * by a global flag slipped in between them. The subcommand no longer follows the
+ * tool, so the rule stops matching and the action runs unguarded:
+ *
+ *     git -C /repo reset --hard        git --no-pager …   git -c core.x=y …
+ *     git --work-tree=/x …             aws --profile p …  aws --region r …
+ *     kubectl -n prod delete …         docker --context c …   docker -H … …
+ *     terraform -chdir=/x apply …      helm -n ns …       npm --silent …
+ *
+ * This constant is the ONE shared fix for that whole class, referenced rather
+ * than copied so a rule cannot drift to a weaker spelling. It is spliced in RIGHT
+ * AFTER the tool name and BEFORE the `\s+` that precedes the subcommand:
+ * `\\bgit${LEADING_FLAGS}\\s+reset\\s+--hard\\b`. Empty (zero flags) it collapses
+ * back to the original `tool\s+subcommand`, so the plain form still matches.
+ *
+ * The forms it tolerates, each as one unit that may repeat:
+ *   `--no-pager` / `--silent`         a bare long flag
+ *   `-C /repo` / `-n prod`            a short flag with a separate value
+ *   `-c core.pager=cat`               a short flag whose value carries `=`
+ *   `--work-tree=/x` / `-chdir=/x`    a flag with an attached `=value`
+ *   `--profile prod` / `--context c`  a long flag with a separate value
+ *
+ * ── Bounded on purpose ───────────────────────────────────────────────────────
+ *
+ * Every quantifier is bounded — the run repeats at most a handful of times and
+ * each token has a capped length — so the fragment is linear and cannot backtrack
+ * catastrophically. A regex whose repetition nests an unbounded quantifier is
+ * rejected at parse time; this stays well inside that limit and the length cap.
+ *
+ * ── What it does NOT cover ───────────────────────────────────────────────────
+ *
+ * It reads flag SHAPE, not meaning: it cannot tell a flag that consumes the next
+ * word as its value from the subcommand itself, so a value token is required not
+ * to begin with `-`, which lets a bare flag followed by the subcommand still
+ * resolve to the subcommand. It does not cross a shell metacharacter, and it does
+ * not read a flag that itself runs another program. An absolute tool path
+ * (`/usr/bin/git`) already matches through the `\b` anchor every tool carries;
+ * this fragment only closes the gap between the tool and its subcommand.
+ */
+export const LEADING_FLAGS =
+  "(?:\\s+-{1,2}[A-Za-z][\\w-]{0,24}(?:=\\S{1,40})?(?:\\s+[^-\\s]\\S{0,40})?){0,6}";

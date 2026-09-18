@@ -19,7 +19,15 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { PACKS, type Pack, parseRule, RULES, RULES_BY_PACK, type Rule } from "../src/index.js";
+import {
+  type Action,
+  PACKS,
+  type Pack,
+  parseRule,
+  RULES,
+  RULES_BY_PACK,
+  type Rule,
+} from "../src/index.js";
 
 /** Every condition in a rule's match, across all three groups. */
 function conditionsOf(rule: Rule) {
@@ -146,6 +154,51 @@ describe("rule ids", () => {
           new RegExp(`^${prefix[pack]}\\.[a-z0-9-]+$`),
         );
       }
+    }
+  });
+});
+
+/**
+ * The `block-` id prefix and the block action.
+ *
+ * An id that opens `block-` reads, in the UI, as a deny — `status`, `guardrails
+ * list` and the HTML report all print the id. Most such rules do deny, and this
+ * pins that. Two do not, on purpose: `block-` is a legacy prefix on their ids, and
+ * a rule id is a stable identifier that is never renamed, while each rule's own
+ * title and default action say what it really does — `block-env-file-read` flags a
+ * read (`warn`), `block-prod-config-edit` holds an edit for approval
+ * (`require_approval`). So the prefix is CHECKED here rather than trusted, and the
+ * two lighter-action rules are named with the reason each keeps its action.
+ */
+describe("a block- id denies, unless it is a named exception", () => {
+  const LIGHTER_ACTION: Record<string, { action: Action; why: string }> = {
+    "block-env-file-read": {
+      action: "warn",
+      why: "flags reading a secret file; its title says Flag, not Block",
+    },
+    "block-prod-config-edit": {
+      action: "require_approval",
+      why: "a path heuristic with false positives gating ordinary edits; its title says Approve",
+    },
+  };
+
+  const blockPrefixed = RULES.filter((rule) => rule.id.startsWith("block-"));
+
+  it("has more than one block- rule, so the sweep is not vacuous", () => {
+    expect(blockPrefixed.length).toBeGreaterThan(1);
+  });
+
+  it.each(
+    blockPrefixed.map((rule) => [rule.id, rule] as const),
+  )("%s carries the action its id or its exception promises", (id, rule) => {
+    const exception = LIGHTER_ACTION[id];
+    expect(rule.defaultAction).toBe(exception ? exception.action : "block");
+  });
+
+  it("every named exception is a real rule in the corpus", () => {
+    const ids = new Set(RULES.map((rule) => rule.id));
+    for (const id of Object.keys(LIGHTER_ACTION)) {
+      expect(ids.has(id), `${id} is not in the corpus`).toBe(true);
     }
   });
 });

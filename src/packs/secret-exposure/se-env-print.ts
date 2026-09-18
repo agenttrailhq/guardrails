@@ -1,6 +1,6 @@
 // cspell:words childitem
 
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -21,7 +21,7 @@ export const seEnvPrint: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           "\\bprintenv\\b",
           "\\benv\\s*\\|",
@@ -35,7 +35,7 @@ export const seEnvPrint: Rule = {
       ...QUOTED_MENTION,
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: ["\\.env\\.(example|sample|template)\\b"],
       },
     ],

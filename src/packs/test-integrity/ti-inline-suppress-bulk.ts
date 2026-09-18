@@ -1,5 +1,5 @@
 // cspell:words nocheck noqa pytest xdescribe xtest
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
 import { bash, mentions } from "../../fixtures.js";
 import type { MatchCondition, Rule } from "../../schema.js";
 
@@ -45,7 +45,7 @@ export const tiInlineSuppressBulk: Rule = {
     any_of: [
       {
         kind: "execute_tool",
-        label: "{Bash,PowerShell}",
+        label: SHELL_AND_MCP,
         detail_matches: [
           `${SED}${TS_LINT}`,
           `${SED}${PYTHON}`,

@@ -78,7 +78,14 @@ describe("no two rules are near-duplicates", () => {
     ): boolean => {
       if (condition.label !== undefined) {
         const alternatives = condition.label.replace(/[{}]/g, "").split(",");
-        if (!alternatives.some((a) => a.toLowerCase() === fixture.tool.toLowerCase())) return false;
+        const tool = fixture.tool.toLowerCase();
+        // A `*`-suffixed alternative (e.g. `mcp__*`) is a prefix, like the engine's
+        // label glob; everything else compares whole.
+        const hit = (a: string): boolean => {
+          const alt = a.toLowerCase();
+          return alt.endsWith("*") ? tool.startsWith(alt.slice(0, -1)) : alt === tool;
+        };
+        if (!alternatives.some(hit)) return false;
       }
       if (condition.detail_contains !== undefined) {
         if (text === undefined || !condition.detail_contains.every((s) => text.includes(s))) {
