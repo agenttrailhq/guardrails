@@ -25,6 +25,7 @@
     "esbuild",
     "esprima",
     "estree",
+    "exfiltration",
     "fdir",
     "fgrep",
     "fsevents",
