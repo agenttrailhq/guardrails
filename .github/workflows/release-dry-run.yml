@@ -18,3 +18,4 @@ jobs:
       - run: pnpm exec semantic-release --dry-run
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}   # SR verifies npm auth even in --dry-run; live will use OIDC (TEC-1131)
