@@ -2,7 +2,7 @@ name: release-dry-run
 on:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write   # semantic-release verifies push permission even in --dry-run (it pushes nothing here)
 jobs:
   dry-run:
     runs-on: ubuntu-latest
