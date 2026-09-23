@@ -69,8 +69,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^11.0.1",
     "@types/node": "^25.9.1",
+    "conventional-changelog-conventionalcommits": "^10.4.0",
     "cspell": "^8.19.4",
+    "semantic-release": "^25.0.9",
     "tsup": "^8.3.5",
     "typescript": "^6.0.3",
     "vitest": "^4.1.7"
