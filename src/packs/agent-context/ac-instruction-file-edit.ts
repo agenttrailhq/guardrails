@@ -17,7 +17,7 @@ export const acInstructionFileEdit: Rule = {
   defaultAction: "require_approval",
   title: "The agent editing its standing instructions",
   description:
-    "Holds a file tool opening the instructions a coding agent loads at the start of every session: `CLAUDE.md`, `CLAUDE.local.md` and `.claude/rules/`; `AGENTS.md` and `AGENTS.override.md`, which Codex, Cursor, Windsurf, Copilot and Cline all read; `GEMINI.md`; `.cursorrules`; Windsurf's `.windsurfrules`, `.windsurf/rules/` and `.devin/rules/`; Cline's `.clinerules` file or directory and its global `Cline/Rules/` folder; Copilot's `.github/copilot-instructions.md` and `.github/instructions/**/*.instructions.md`; and `.aider.conf.yml`, which sets the files Aider reads on every launch. A line written into one of these is followed in every later session. Matched in any directory and in any letter case. File tools carry a path and no content, so it cannot see what was written, and it does not tell reading apart from editing. Does not cover `.cursor/rules/`, which `fs.agent-self-config` holds. Misses a context file renamed through Gemini's `context.fileName` or Codex's `project_doc_fallback_filenames`, Aider's `CONVENTIONS.md`, which Aider loads only when asked and which is too common a name to match, and any of these files written by a shell command instead of a file tool.",
+    "Holds a file tool opening the instructions a coding agent loads at the start of every session: `CLAUDE.md`, `CLAUDE.local.md` and `.claude/rules/`; `AGENTS.md` and `AGENTS.override.md`, which Codex, Cursor, Windsurf, Copilot and Cline all read; `GEMINI.md`; `.cursorrules`; Windsurf's `.windsurfrules`, `.windsurf/rules/` and `.devin/rules/`; Cline's `.clinerules` file or directory and its global `Cline/Rules/` folder; Copilot's `.github/copilot-instructions.md` and `.github/instructions/**/*.instructions.md`; and `.aider.conf.yml`, which sets the files Aider reads on every launch. A line written into one of these is followed in every later session. Matched in any directory and in any letter case. Reading is excluded — the `Read` and `Grep` tools never match — so an agent opening its instructions to read them is not held; every other file tool is, including one this corpus does not know. File tools carry a path and no content, so it still cannot see what was written. Does not cover `.cursor/rules/`, which `fs.agent-self-config` holds. Misses a context file renamed through Gemini's `context.fileName` or Codex's `project_doc_fallback_filenames`, Aider's `CONVENTIONS.md`, which Aider loads only when asked and which is too common a name to match, and any of these files written by a shell command instead of a file tool.",
   match: {
     any_of: [
       {
@@ -33,6 +33,11 @@ export const acInstructionFileEdit: Rule = {
       { kind: "execute_tool", file_glob: "**/.github/copilot-instructions.md" },
       { kind: "execute_tool", file_glob: "**/.github/instructions/**/*.instructions.md" },
       { kind: "execute_tool", file_glob: "**/.aider.conf.yml" },
+    ],
+    none_of: [
+      // A read is not an edit. Named as a deny-list rather than an `any_of` over
+      // the write tools, so an unknown file tool on a matched path still holds.
+      { kind: "execute_tool", label: "{Read,Grep}" },
     ],
   },
   fixtures: {
@@ -68,6 +73,8 @@ export const acInstructionFileEdit: Rule = {
       file(".cursor/rules/style.mdc"),
       file(".claude/settings.json"),
       file(".aider.chat.history.md"),
+      file("CLAUDE.md", "Read"),
+      file(".github/copilot-instructions.md", "Grep"),
     ],
   },
 };

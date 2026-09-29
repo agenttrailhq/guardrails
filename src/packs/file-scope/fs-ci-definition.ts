@@ -13,7 +13,7 @@ export const fsCiDefinition: Rule = {
   defaultAction: "require_approval",
   title: "Editing the CI pipeline definition",
   description:
-    "Holds a file tool opening a CI definition — GitHub Actions workflows and composite actions, .gitlab-ci.yml, a Jenkinsfile, CircleCI, Azure Pipelines, Buildkite or Bitbucket pipelines. This is where the checks that gate every merge are written down, and where a new step would run with the repository's secrets; both edits look like an ordinary diff. Does NOT match other files under .github/ (CODEOWNERS, issue templates), which gate nothing. It MISSES a CI system whose definition lives outside the repository.",
+    "Holds a file tool opening a CI definition — GitHub Actions workflows and composite actions, .gitlab-ci.yml, a Jenkinsfile, CircleCI, Azure Pipelines, Buildkite or Bitbucket pipelines. This is where the checks that gate every merge are written down, and where a new step would run with the repository's secrets; both edits look like an ordinary diff. Reading is excluded — the Read and Grep tools never match — so opening a CI definition to read it is not held; every other file tool is, including one this corpus does not know. Does NOT match other files under .github/ (CODEOWNERS, issue templates), which gate nothing. It MISSES a CI system whose definition lives outside the repository.",
   match: {
     any_of: [
       { kind: "execute_tool", file_glob: "**/.github/workflows/**" },
@@ -24,6 +24,11 @@ export const fsCiDefinition: Rule = {
       { kind: "execute_tool", file_glob: "**/azure-pipelines.yml" },
       { kind: "execute_tool", file_glob: "**/.buildkite/**" },
       { kind: "execute_tool", file_glob: "**/bitbucket-pipelines.yml" },
+    ],
+    none_of: [
+      // A read is not an edit. Named as a deny-list rather than an `any_of` over
+      // the write tools, so an unknown file tool on a matched path still holds.
+      { kind: "execute_tool", label: "{Read,Grep}" },
     ],
   },
   fixtures: {
@@ -38,6 +43,8 @@ export const fsCiDefinition: Rule = {
       file(".github/PULL_REQUEST_TEMPLATE.md"),
       file("package.json"),
       file("README.md"),
+      file(".github/workflows/ci.yml", "Read"),
+      file(".gitlab-ci.yml", "Grep"),
     ],
   },
 };

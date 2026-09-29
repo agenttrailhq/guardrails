@@ -19,7 +19,7 @@ export const fsSystemPaths: Rule = {
   defaultAction: "require_approval",
   title: "Writing to a system directory",
   description:
-    "Holds a file tool opening a path under a system directory — /etc, /bin, /sbin, /usr/bin, /usr/local/bin, /boot, /System, /Library/LaunchDaemons, or Windows/System32. HONEST CEILING: this is a list of well-known ABSOLUTE paths and it cannot be anything else. No working directory and no project root reaches the guard, so the rule you would actually want — 'the agent wrote outside the project' — is inexpressible, and would match everything or nothing. It therefore MISSES a write anywhere else outside your repository, including another project on the same machine.",
+    "Holds a file tool writing to a path under a system directory — /etc, /bin, /sbin, /usr/bin, /usr/local/bin, /boot, /System, /Library/LaunchDaemons, or Windows/System32. Reading is excluded — the Read and Grep tools never match — so reading /etc/hosts is not held; every other file tool is, including one this corpus does not know. HONEST CEILING: this is a list of well-known ABSOLUTE paths and it cannot be anything else. No working directory and no project root reaches the guard, so the rule you would actually want — 'the agent wrote outside the project' — is inexpressible, and would match everything or nothing. It therefore MISSES a write anywhere else outside your repository, including another project on the same machine.",
   match: {
     any_of: [
       { kind: "execute_tool", file_glob: "/etc/**" },
@@ -31,6 +31,11 @@ export const fsSystemPaths: Rule = {
       { kind: "execute_tool", file_glob: "/System/**" },
       { kind: "execute_tool", file_glob: "/Library/LaunchDaemons/**" },
       { kind: "execute_tool", file_glob: "**/Windows/System32/**" },
+    ],
+    none_of: [
+      // A read is not an edit. Named as a deny-list rather than an `any_of` over
+      // the write tools, so an unknown file tool on a matched path still holds.
+      { kind: "execute_tool", label: "{Read,Grep}" },
     ],
   },
   fixtures: {
@@ -45,6 +50,8 @@ export const fsSystemPaths: Rule = {
       file("/home/dev/project/src/main.rs"),
       file("/tmp/scratch.txt", "Write"),
       file("docs/etc-notes.md"),
+      file("/etc/hosts", "Read"),
+      file("/usr/local/bin/app", "Grep"),
     ],
   },
 };

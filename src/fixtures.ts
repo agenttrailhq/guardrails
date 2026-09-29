@@ -38,9 +38,12 @@ export function pwsh(command: string): Fixture {
  * A fixture on the file channel.
  *
  * `tool` defaults to `Edit`. The guard's mapper routes `Edit`, `Write`, `Read`,
- * `MultiEdit` and `NotebookEdit` to this channel, and file rules deliberately
- * carry no `label`, so which of them a fixture names does not change the answer —
- * it only documents the case being proven.
+ * `MultiEdit`, `NotebookEdit`, `Grep` and `Glob` to this channel, and WHICH ONE a
+ * fixture names is load-bearing: a file rule that names an operation in its id or
+ * title excludes the read tools in its `none_of` (`{Read,Grep}`), so the same path
+ * matches under `Edit` and does not match under `Read`. Naming the tool is
+ * therefore part of the case a fixture proves, not documentation of it — an
+ * `allow` fixture that leaves the default in place proves nothing about reads.
  */
 export function file(filePath: string, tool = "Edit"): Fixture {
   return { tool, file_path: filePath };
