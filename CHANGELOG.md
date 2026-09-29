@@ -1,3 +1,9 @@
+## [0.2.1](https://github.com/agenttrailhq/guardrails/compare/v0.2.0...v0.2.1) (2026-09-29)
+
+### Bug Fixes
+
+* exclude the read tools from the file rules that name an edit ([#4](https://github.com/agenttrailhq/guardrails/issues/4)) ([f5ae8f8](https://github.com/agenttrailhq/guardrails/commit/f5ae8f8c231e019e0f542d92e380768d2692fcfe))
+
 # Changelog
 
 All notable changes to `@agenttrail/guardrails` are recorded here, in the
