@@ -17,7 +17,7 @@ export const fsVcsInternals: Rule = {
   defaultAction: "require_approval",
   title: "Editing git's internals directly",
   description:
-    "Holds a file tool opening git's own bookkeeping — .git/config, .git/hooks/, .git/refs/, .git/HEAD, .git/info/exclude — where a change alters what future git commands do rather than what the repository contains. Deliberately NARROW: all of .git/** would include COMMIT_EDITMSG and the index, which change during every ordinary commit, so the rule would fire constantly and be switched off. It does NOT match .gitignore, .gitattributes or anything under .github/, which are tracked project files.",
+    "Holds a file tool opening git's own bookkeeping — .git/config, .git/hooks/, .git/refs/, .git/HEAD, .git/info/exclude — where a change alters what future git commands do rather than what the repository contains. Deliberately NARROW: all of .git/** would include COMMIT_EDITMSG and the index, which change during every ordinary commit, so the rule would fire constantly and be switched off. Reading is excluded — the Read and Grep tools never match — so opening .git/config to read it is not held; every other file tool is, including one this corpus does not know. It does NOT match .gitignore, .gitattributes or anything under .github/, which are tracked project files.",
   match: {
     any_of: [
       { kind: "execute_tool", file_glob: "**/.git/config" },
@@ -25,6 +25,11 @@ export const fsVcsInternals: Rule = {
       { kind: "execute_tool", file_glob: "**/.git/refs/**" },
       { kind: "execute_tool", file_glob: "**/.git/HEAD" },
       { kind: "execute_tool", file_glob: "**/.git/info/exclude" },
+    ],
+    none_of: [
+      // A read is not an edit. Named as a deny-list rather than an `any_of` over
+      // the write tools, so an unknown file tool on a matched path still holds.
+      { kind: "execute_tool", label: "{Read,Grep}" },
     ],
   },
   fixtures: {
@@ -39,6 +44,8 @@ export const fsVcsInternals: Rule = {
       file(".gitattributes"),
       file(".github/CODEOWNERS"),
       file("src/index.ts"),
+      file(".git/config", "Read"),
+      file(".git/hooks/pre-commit", "Grep"),
     ],
   },
 };

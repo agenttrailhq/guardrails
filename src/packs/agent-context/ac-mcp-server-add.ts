@@ -23,7 +23,7 @@ export const acMcpServerAdd: Rule = {
   defaultAction: "require_approval",
   title: "Adding an MCP server to an agent",
   description:
-    "Holds the commands that register an MCP server with a coding agent — `claude mcp add`, `claude mcp add-json`, `claude mcp add-from-claude-desktop`, `codex mcp add` and `gemini mcp add` — and `claude --mcp-config`, which attaches servers to a single session. Each gives an agent a new set of tools, often a program fetched and started on the spot, with nobody reviewing the change. Deliberately NOT matched: listing or removing servers (`claude mcp list`, `claude mcp remove`), and the MCP Inspector (`npx @modelcontextprotocol/inspector`), which is a debugging tool rather than a registration. Cursor has no command for this, so its `.cursor/mcp.json`, in a project or the home directory, is matched as a file instead; a project's `.mcp.json` is held by `fs.agent-self-config`. Misses servers written into `~/.claude.json` or Gemini's `settings.json` with a file tool, and a global flag whose value is quoted when it sits before `mcp`. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone, as long as every shell metacharacter stays inside the quotes.",
+    "Holds the commands that register an MCP server with a coding agent — `claude mcp add`, `claude mcp add-json`, `claude mcp add-from-claude-desktop`, `codex mcp add` and `gemini mcp add` — and `claude --mcp-config`, which attaches servers to a single session. Each gives an agent a new set of tools, often a program fetched and started on the spot, with nobody reviewing the change. Deliberately NOT matched: listing or removing servers (`claude mcp list`, `claude mcp remove`), and the MCP Inspector (`npx @modelcontextprotocol/inspector`), which is a debugging tool rather than a registration. Cursor has no command for this, so its `.cursor/mcp.json`, in a project or the home directory, is matched as a file instead — written, not read: the `Read` and `Grep` tools never match it, and every other file tool does, including one this corpus does not know; a project's `.mcp.json` is held by `fs.agent-self-config`. Misses servers written into `~/.claude.json` or Gemini's `settings.json` with a file tool, and a global flag whose value is quoted when it sits before `mcp`. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone, as long as every shell metacharacter stays inside the quotes.",
   match: {
     any_of: [
       {
@@ -38,7 +38,14 @@ export const acMcpServerAdd: Rule = {
       // Cursor has no `mcp add` command; its servers are added by editing this file.
       { kind: "execute_tool", file_glob: "**/.cursor/mcp.json" },
     ],
-    none_of: [...QUOTED_MENTION],
+    none_of: [
+      // A read is not an addition. This covers the `.cursor/mcp.json` arm — the
+      // shell arm already pins its own tool family. Named as a deny-list rather
+      // than an `any_of` over the write tools, so an unknown file tool on that
+      // path still holds.
+      { kind: "execute_tool", label: "{Read,Grep}" },
+      ...QUOTED_MENTION,
+    ],
   },
   fixtures: {
     block: [
@@ -64,6 +71,8 @@ export const acMcpServerAdd: Rule = {
       file("config/mcp.json"),
       file(".cursor/rules/style.mdc"),
       bash("pnpm run test"),
+      file(".cursor/mcp.json", "Read"),
+      file("/Users/dev/.cursor/mcp.json", "Grep"),
     ],
   },
 };

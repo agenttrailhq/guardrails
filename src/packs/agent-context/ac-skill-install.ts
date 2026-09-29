@@ -17,7 +17,7 @@ export const acSkillInstall: Rule = {
   defaultAction: "require_approval",
   title: "The agent installing a skill, command or sub-agent",
   description:
-    "Holds a file tool opening a skill, slash command, sub-agent or output style that a coding agent loads by name: Claude Code's `.claude/skills/`, `.claude/commands/`, `.claude/agents/` and `.claude/output-styles/`; the shared `.agents/skills/`; Codex's `.codex/skills/`, `.codex/prompts/` and `.codex/agents/`; Gemini's `.gemini/commands/`, `.gemini/skills/` and `.gemini/agents/`; Cursor's `.cursor/skills/`, `.cursor/agents/` and `.cursor/commands/`; Windsurf's `.windsurf/workflows/` and `.windsurf/skills/` and their global copies under `.codeium/windsurf/`; Cline's `.cline/skills/`; and a `SKILL.md` anywhere, which is how a plugin ships a skill. Each becomes a reusable instruction the agent may follow later, often with a script beside it that the agent runs. Matched at project or home level and in any letter case. File tools carry a path and no content, so it cannot see what was written, and it does not tell reading apart from editing. Deliberately NOT matched: an ordinary `skills/`, `commands/` or `agents/` folder in a project's source, and `.clinerules/skills/`, which `ac.instruction-file-edit` holds. Misses a skill copied into one of these folders by a shell command such as `cp` or `git clone`, and the managed system-wide workflow folders.",
+    "Holds a file tool opening a skill, slash command, sub-agent or output style that a coding agent loads by name: Claude Code's `.claude/skills/`, `.claude/commands/`, `.claude/agents/` and `.claude/output-styles/`; the shared `.agents/skills/`; Codex's `.codex/skills/`, `.codex/prompts/` and `.codex/agents/`; Gemini's `.gemini/commands/`, `.gemini/skills/` and `.gemini/agents/`; Cursor's `.cursor/skills/`, `.cursor/agents/` and `.cursor/commands/`; Windsurf's `.windsurf/workflows/` and `.windsurf/skills/` and their global copies under `.codeium/windsurf/`; Cline's `.cline/skills/`; and a `SKILL.md` anywhere, which is how a plugin ships a skill. Each becomes a reusable instruction the agent may follow later, often with a script beside it that the agent runs. Matched at project or home level and in any letter case. Reading is excluded — the `Read` and `Grep` tools never match — so an agent opening an installed skill to read it is not held; every other file tool is, including one this corpus does not know. File tools carry a path and no content, so it still cannot see what was written. Deliberately NOT matched: an ordinary `skills/`, `commands/` or `agents/` folder in a project's source, and `.clinerules/skills/`, which `ac.instruction-file-edit` holds. Misses a skill copied into one of these folders by a shell command such as `cp` or `git clone`, and the managed system-wide workflow folders.",
   match: {
     any_of: [
       { kind: "execute_tool", file_glob: "**/.claude/{skills,commands,agents,output-styles}/**" },
@@ -29,6 +29,11 @@ export const acSkillInstall: Rule = {
       { kind: "execute_tool", file_glob: "**/.codeium/windsurf/{skills,global_workflows}/**" },
       { kind: "execute_tool", file_glob: "**/.cline/skills/**" },
       { kind: "execute_tool", file_glob: "**/SKILL.md" },
+    ],
+    none_of: [
+      // A read is not an edit. Named as a deny-list rather than an `any_of` over
+      // the write tools, so an unknown file tool on a matched path still holds.
+      { kind: "execute_tool", label: "{Read,Grep}" },
     ],
   },
   fixtures: {
@@ -59,6 +64,8 @@ export const acSkillInstall: Rule = {
       file(".github/workflows/release.yml"),
       file("scripts/release.sh"),
       file(".gemini/settings.json"),
+      file(".claude/skills/deploy/SKILL.md", "Read"),
+      file(".claude/commands/deploy.md", "Grep"),
     ],
   },
 };

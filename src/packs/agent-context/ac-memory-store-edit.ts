@@ -15,7 +15,7 @@ export const acMemoryStoreEdit: Rule = {
   defaultAction: "require_approval",
   title: "The agent editing its own memory",
   description:
-    "Holds a file tool opening the memory a coding agent carries between sessions: Claude Code's auto memory under `.claude/projects/<project>/memory/`, and its sub-agent memory in `.claude/agent-memory/` and `.claude/agent-memory-local/`; Codex's `.codex/memories/`; Gemini's private `.gemini/tmp/<project>/memory/`; Windsurf's `.codeium/windsurf/memories/`, including `global_rules.md`; and `.cursor/memory/`. A false fact saved here is recalled as true in every later session. A `MEMORY.md` outside those directories deliberately does NOT match, and neither does a project's own `docs/memory/` folder: the name alone is not an agent's memory. File tools carry a path and no content, so it cannot see what was written, and it does not tell reading apart from editing, so an agent recalling a memory by reading its file is asked too. Misses a memory directory moved with Claude Code's `autoMemoryDirectory` setting, and Cursor memories kept anywhere other than `.cursor/memory/`, since Cursor does not document where it stores them. Gemini memories saved into `GEMINI.md` are held by `ac.instruction-file-edit` instead.",
+    "Holds a file tool opening the memory a coding agent carries between sessions: Claude Code's auto memory under `.claude/projects/<project>/memory/`, and its sub-agent memory in `.claude/agent-memory/` and `.claude/agent-memory-local/`; Codex's `.codex/memories/`; Gemini's private `.gemini/tmp/<project>/memory/`; Windsurf's `.codeium/windsurf/memories/`, including `global_rules.md`; and `.cursor/memory/`. A false fact saved here is recalled as true in every later session. A `MEMORY.md` outside those directories deliberately does NOT match, and neither does a project's own `docs/memory/` folder: the name alone is not an agent's memory. Reading is excluded — the `Read` and `Grep` tools never match — so an agent recalling a memory by reading its file is not asked; every other file tool is, including one this corpus does not know. File tools carry a path and no content, so it still cannot see what was written. Misses a memory directory moved with Claude Code's `autoMemoryDirectory` setting, and Cursor memories kept anywhere other than `.cursor/memory/`, since Cursor does not document where it stores them. Gemini memories saved into `GEMINI.md` are held by `ac.instruction-file-edit` instead.",
   match: {
     any_of: [
       { kind: "execute_tool", file_glob: "**/.claude/projects/*/memory/**" },
@@ -24,6 +24,11 @@ export const acMemoryStoreEdit: Rule = {
       { kind: "execute_tool", file_glob: "**/.gemini/tmp/*/memory/**" },
       { kind: "execute_tool", file_glob: "**/.codeium/windsurf/memories/**" },
       { kind: "execute_tool", file_glob: "**/.cursor/memory/**" },
+    ],
+    none_of: [
+      // A read is not an edit. Named as a deny-list rather than an `any_of` over
+      // the write tools, so an unknown file tool on a matched path still holds.
+      { kind: "execute_tool", label: "{Read,Grep}" },
     ],
   },
   fixtures: {
@@ -48,6 +53,8 @@ export const acMemoryStoreEdit: Rule = {
       file("/Users/dev/.claude/projects/-Users-dev-shop/transcript.jsonl"),
       file("/home/dev/.gemini/settings.json"),
       file(".claude/settings.json"),
+      file(".claude/agent-memory/reviewer/MEMORY.md", "Read"),
+      file("/home/dev/.codex/memories/project.md", "Grep"),
     ],
   },
 };
