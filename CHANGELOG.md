@@ -1,3 +1,9 @@
+## [0.2.2](https://github.com/agenttrailhq/guardrails/compare/v0.2.1...v0.2.2) (2026-10-06)
+
+### Documentation
+
+* **readme:** refresh the README and add contributing, security and conduct guides ([f1368ce](https://github.com/agenttrailhq/guardrails/commit/f1368ce18aa041674c285aec2f515183c5ba8d72))
+
 ## [0.2.1](https://github.com/agenttrailhq/guardrails/compare/v0.2.0...v0.2.1) (2026-09-29)
 
 ### Bug Fixes
