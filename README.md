@@ -198,15 +198,21 @@ Several packs exist because of risks named in OWASP's two lists for AI systems: 
 action that comes out of it, so these rules address a risk at the point where it turns into a
 command or a file change.
 
-| Pack | Agentic risks | LLM risks |
-|---|---|---|
-| `working-tree`, `destructive-data`, `prod-infra`, `file-scope` | ASI02 Tool Misuse and Exploitation | LLM03 Excessive Agency |
-| `rce-supply-chain` | ASI05 Unexpected Code Execution, ASI04 Agentic Supply Chain | LLM04 Supply Chain |
-| `privilege-supply-chain` | ASI03 Identity and Privilege Abuse, ASI04 Agentic Supply Chain | LLM04 Supply Chain |
-| `secret-exposure`, `exfiltration` | ASI02 Tool Misuse and Exploitation, ASI03 Identity and Privilege Abuse | LLM02 Sensitive Information Disclosure |
-| `safety-bypass` | ASI09 Human-Agent Trust Exploitation | LLM10 Improper Output Handling (`gb.ansi-terminal-forgery`) |
-| `agent-context` | ASI06 Memory and Context Poisoning (the write, not its contents), ASI10 Rogue Agents | LLM03 Excessive Agency |
-| `test-integrity` | ASI10 Rogue Agents, ASI09 Human-Agent Trust Exploitation | |
+| Pack | Agentic risks | LLM risks | Default action |
+|---|---|---|---|
+| `working-tree`, `destructive-data`, `prod-infra`, `file-scope` | ASI02 Tool Misuse and Exploitation | LLM03 Excessive Agency | `block` or `require_approval` |
+| `rce-supply-chain` | ASI05 Unexpected Code Execution, ASI04 Agentic Supply Chain | LLM04 Supply Chain | `block` or `require_approval` |
+| `privilege-supply-chain` | ASI03 Identity and Privilege Abuse, ASI04 Agentic Supply Chain | LLM04 Supply Chain | `require_approval`, except `flag-dependency-install`, which is `warn` |
+| `secret-exposure`, `exfiltration` | ASI02 Tool Misuse and Exploitation, ASI03 Identity and Privilege Abuse | LLM02 Sensitive Information Disclosure | `secret-exposure` is mostly `warn`; `exfiltration` is `block` or `require_approval` |
+| `safety-bypass` | ASI09 Human-Agent Trust Exploitation | LLM10 Improper Output Handling (`gb.ansi-terminal-forgery`) | `require_approval`, except `gb.ansi-terminal-forgery`, which is `warn` |
+| `agent-context` | ASI06 Memory and Context Poisoning (the write, not its contents), ASI10 Rogue Agents | LLM03 Excessive Agency | `require_approval` |
+| `test-integrity` | ASI10 Rogue Agents, ASI09 Human-Agent Trust Exploitation | | Mostly `warn`; deleting a test file or editing a test runner's configuration is `require_approval` |
+
+Read the default action before relying on a risk. A `warn` rule lets the action proceed and records
+it; only `require_approval` and `block` stop it. Reading a secret is a normal part of a normal day,
+so most secret-exposure rules warn, and a dependency install is flagged, not held. A file tool
+carries a path rather than content, so `ac.memory-store-edit` cannot see what was written to a
+memory file. You can change any rule's action in your own configuration.
 
 What the rules cannot address, by design:
 
