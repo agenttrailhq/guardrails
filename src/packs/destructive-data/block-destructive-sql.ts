@@ -11,7 +11,7 @@ export const blockDestructiveSql: Rule = {
   category: "destructive-data",
   severity: "critical",
   defaultAction: "block",
-  title: "Block destructive SQL in production",
+  title: "Block destructive SQL",
   description:
     'Blocks shell commands that execute destructive SQL DDL — DROP TABLE, TRUNCATE or DROP DATABASE. The two-word phrases are matched in any case with any spacing. Bare TRUNCATE is matched only in UPPER case, and this rule is therefore CASE-SENSITIVE on that arm by design: lower-case `truncate` is also the coreutils binary and a common identifier, so matching it would block routine work — the cost is that a lower-case `truncate users;` without the `table` keyword is NOT caught. A command naming a read-only search or history tool (grep, rg, ag, ack, git commit/log/grep/blame/show) is left alone, because searching for the words is not executing them; a compound command that both searches and executes is therefore missed. Shell commands only: SQL issued from inside application code is invisible here. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
