@@ -20,7 +20,7 @@ export const fsSystemPaths: Rule = {
   owasp: ["ASI02", "LLM03"],
   title: "Writing to a system directory",
   description:
-    "Holds a file tool writing to a path under a system directory — /etc, /bin, /sbin, /usr/bin, /usr/local/bin, /boot, /System, /Library/LaunchDaemons, or Windows/System32. Reading is excluded — the Read and Grep tools never match — so reading /etc/hosts is not held; every other file tool is, including one this corpus does not know. HONEST CEILING: this is a list of well-known ABSOLUTE paths and it cannot be anything else. No working directory and no project root reaches the guard, so the rule you would actually want — 'the agent wrote outside the project' — is inexpressible, and would match everything or nothing. It therefore MISSES a write anywhere else outside your repository, including another project on the same machine.",
+    "Holds a file tool writing to a path under a system directory — /etc, /bin, /sbin, /usr/bin, /usr/local/bin, /boot, /System, /Library/LaunchDaemons, or Windows/System32. Reading is excluded — the Read and Grep tools never match — so reading /etc/hosts is not held; every other file tool is, including one this corpus does not know. HONEST CEILING: this is a list of well-known ABSOLUTE paths and it cannot be anything else. No working directory and no project root reaches the guard, so the check you would actually want — 'the agent wrote outside the project' — is inexpressible, and would match everything or nothing. It therefore MISSES a write anywhere else outside your repository, including another project on the same machine.",
   match: {
     any_of: [
       { kind: "execute_tool", file_glob: "/etc/**" },

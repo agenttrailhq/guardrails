@@ -324,7 +324,7 @@ describe("the authoring entry point", () => {
 
   it("defineRule throws at import time on a malformed rule", () => {
     expect(() => defineRule({ ...ruleWith(), severity: "catastrophic" as never })).toThrow(
-      /invalid guardrails rule wt\.example/,
+      /invalid guardrail wt\.example/,
     );
   });
 
