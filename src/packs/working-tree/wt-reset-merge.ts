@@ -14,6 +14,7 @@ export const wtResetMerge: Rule = {
   category: "working-tree",
   severity: "medium",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "git reset --merge / --keep can discard local changes",
   description:
     'Resets with `--merge` or `--keep`, both of which can silently drop uncommitted changes to files that differ between HEAD and the target commit. They read as the cautious options, which is why they are worth a prompt rather than a block. Does NOT match `git reset --soft` or a bare `git reset`, neither of which touches the working tree, and it does not cover `git merge --abort`. Global flags between `git` and `reset` are tolerated (`git -C <dir> reset --merge`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

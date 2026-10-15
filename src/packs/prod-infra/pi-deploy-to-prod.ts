@@ -13,6 +13,7 @@ export const piDeployToProd: Rule = {
   category: "prod-infra",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "A deploy command that names production",
   description:
     'Ships code to a production environment through a hosting CLI whose command text says so — `vercel --prod`, `netlify deploy --prod`, `serverless deploy --stage prod`, `fly deploy`, `eb deploy`, `wrangler deploy` and Capistrano\'s production task. The preview and staging siblings are deliberately NOT matched, because a rule that asks on every preview deploy is switched off before it ever sees a real one. It MISSES a deploy triggered by a git push, by CI, or by any script whose own text does not name the environment. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

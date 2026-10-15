@@ -11,6 +11,7 @@ export const ddAcceptDataLoss: Rule = {
   category: "destructive-data",
   severity: "critical",
   defaultAction: "block",
+  owasp: ["ASI02", "LLM03"],
   title: "A flag that explicitly accepts data loss",
   description:
     'Matches the flags whose own names admit the consequence — `--accept-data-loss` (Prisma), `--force-reset`, and `prisma db push --force`. A tool that makes you type those words has already decided a human should be in the loop. Does NOT match `prisma db push` without a flag, which is the ordinary spelling, and it cannot tell a scratch database from a real one because no connection string reaches the guard. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

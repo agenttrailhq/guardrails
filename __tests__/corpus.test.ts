@@ -371,3 +371,102 @@ describe("fixtures", () => {
     }
   });
 });
+
+/**
+ * Every rule's OWASP ids, pinned. Adding, removing or moving a tag fails here until this table is
+ * edited in the same change, so a tag never changes as a side effect.
+ */
+const OWASP_TAGS: Record<string, readonly string[]> = {
+  "ac.agent-autonomy-flag": ["ASI03", "ASI10", "LLM03"],
+  "ac.instruction-file-edit": ["ASI06", "ASI10", "LLM03"],
+  "ac.mcp-server-add": ["ASI04", "ASI10", "LLM03"],
+  "ac.memory-store-edit": ["ASI06", "LLM03"],
+  "ac.recursive-agent-invoke": ["LLM03"],
+  "ac.skill-install": ["ASI10", "LLM03"],
+  "block-curl-pipe-to-shell": ["ASI04", "ASI05", "LLM04"],
+  "block-destructive-sql": ["ASI02", "LLM03", "LLM10"],
+  "block-env-file-read": ["ASI02", "ASI03", "LLM02"],
+  "block-force-push": ["ASI02", "LLM03"],
+  "block-hardcoded-secrets": ["ASI02", "ASI03", "LLM02"],
+  "block-prod-config-edit": ["ASI02", "LLM03"],
+  "dd.accept-data-loss": ["ASI02", "LLM03"],
+  "dd.database-drop": ["ASI02", "LLM03"],
+  "dd.docker-prune-volumes": ["ASI02", "LLM03"],
+  "dd.docker-volume-destroy": ["ASI02", "LLM03"],
+  "dd.migration-reset": ["ASI02", "LLM03"],
+  "dd.rm-rf-absolute": ["ASI02", "LLM03"],
+  "dd.shadow-copy-delete": ["ASI02", "LLM03"],
+  "ex.file-upload": ["ASI02", "ASI03", "LLM02"],
+  "ex.paste-service": ["ASI02", "ASI03", "LLM02"],
+  "ex.reverse-shell": ["ASI02", "ASI03", "LLM02"],
+  "ex.tunnel-expose": ["ASI02", "ASI03", "LLM02"],
+  "flag-dependency-install": ["ASI04", "LLM04", "LLM07"],
+  "fs.agent-self-config": ["ASI02", "LLM03"],
+  "fs.ci-definition": ["ASI02", "LLM03"],
+  "fs.system-paths": ["ASI02", "LLM03"],
+  "fs.vcs-internals": ["ASI02", "LLM03"],
+  "gb.admin-merge": ["ASI09"],
+  "gb.ansi-terminal-forgery": ["ASI09", "LLM10"],
+  "gb.audit-trail-purge": ["ASI09"],
+  "gb.execution-policy-bypass": ["ASI09"],
+  "gb.git-no-verify": ["ASI09"],
+  "gb.hooks-disable": ["ASI09"],
+  "gb.host-key-bypass": ["ASI09"],
+  "pi.cloud-resource-delete": ["ASI02", "LLM03"],
+  "pi.deploy-to-prod": ["ASI02", "LLM03"],
+  "pi.helm-release": ["ASI02", "LLM03"],
+  "pi.kubectl-delete": ["ASI02", "LLM03"],
+  "pi.prod-namespace": ["ASI02", "LLM03"],
+  "pi.terraform-auto-approve": ["ASI02", "LLM03"],
+  "pi.terraform-state-mutate": ["ASI02", "LLM03"],
+  "ps.iam-grant": ["ASI03", "LLM03"],
+  "ps.permission-widen": ["ASI03"],
+  "ps.persistence": ["ASI03"],
+  "ps.publish-artifact": ["ASI04", "LLM04"],
+  "ps.sudo-write": ["ASI03"],
+  "rce.eval-dynamic": ["ASI04", "ASI05", "LLM04"],
+  "rce.foreign-registry": ["ASI04", "LLM04"],
+  "rce.remote-runner": ["ASI04", "ASI05", "LLM04"],
+  "rce.tls-verify-off": ["ASI04", "LLM04"],
+  "rce.unverified-package": ["ASI04", "ASI05", "LLM04", "LLM07"],
+  "require-approval-rm-rf": ["ASI02", "LLM03"],
+  "require-auth-on-pii-endpoints": ["ASI02", "ASI03", "LLM02"],
+  "se.credential-file": ["ASI02", "ASI03", "LLM02"],
+  "se.env-print": ["ASI02", "ASI03", "LLM02"],
+  "se.public-acl": ["ASI02", "ASI03", "LLM02"],
+  "se.secret-egress": ["ASI02", "ASI03", "LLM02"],
+  "se.secret-manager-read": ["ASI02", "ASI03", "LLM02"],
+  "se.token-print": ["ASI02", "ASI03", "LLM02"],
+  "ti.ci-skip-marker": ["ASI09"],
+  "ti.coverage-bypass": ["ASI09"],
+  "ti.inline-suppress-bulk": ["ASI09"],
+  "ti.snapshot-blanket-update": ["ASI09"],
+  "ti.test-config-edit": ["ASI09", "ASI10"],
+  "ti.test-file-delete": ["ASI09", "ASI10"],
+  "warn-op-read-secret": ["ASI02", "ASI03", "LLM02"],
+  "wt.branch-force-delete": ["ASI02", "LLM03"],
+  "wt.checkout-discard": ["ASI02", "LLM03"],
+  "wt.clean-fdx": ["ASI02", "LLM03"],
+  "wt.reset-hard": ["ASI02", "LLM03"],
+  "wt.reset-merge": ["ASI02", "LLM03"],
+  "wt.restore-path": ["ASI02", "LLM03"],
+  "wt.stash-drop": ["ASI02", "LLM03"],
+};
+
+describe("every rule's OWASP ids", () => {
+  it("every shipped rule cites at least one OWASP risk", () => {
+    const untagged = RULES.filter((rule) => (rule.owasp ?? []).length === 0).map((r) => r.id);
+    expect(untagged).toEqual([]);
+  });
+
+  it("match the pinned table exactly", () => {
+    const actual = Object.fromEntries(RULES.map((rule) => [rule.id, rule.owasp ?? []]));
+    expect(actual).toEqual(OWASP_TAGS);
+  });
+
+  it("the pin BITES: removing one tag from a copy is a mismatch", () => {
+    const actual = Object.fromEntries(RULES.map((rule) => [rule.id, rule.owasp ?? []]));
+    actual["ac.memory-store-edit"] = ["LLM03"];
+    expect(actual).not.toEqual(OWASP_TAGS);
+  });
+});

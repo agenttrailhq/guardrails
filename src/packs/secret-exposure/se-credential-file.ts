@@ -15,6 +15,7 @@ export const seCredentialFile: Rule = {
   category: "secret-exposure",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "ASI03", "LLM02"],
   title: "Opening a file that holds credentials",
   description:
     "Holds a file tool opening a path where credentials live — an SSH private key, an AWS credentials file, a PEM/P12/PFX/JKS keystore, `.npmrc` or `.pypirc` (which hold registry tokens), a Docker config, or a kubeconfig. Public keys are excluded (`*.pub`). It matches the PATH ONLY: it cannot tell whether the file actually holds a secret, so a `.pem` that is a public certificate is held too, and a credential in a file named something else is missed entirely. `.env` files are covered separately by block-env-file-read.",

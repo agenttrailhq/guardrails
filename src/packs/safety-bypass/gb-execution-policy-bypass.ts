@@ -14,6 +14,7 @@ export const gbExecutionPolicyBypass: Rule = {
   category: "safety-bypass",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI09"],
   title: "Bypassing the PowerShell execution policy",
   description:
     'Holds `Set-ExecutionPolicy Bypass/Unrestricted` and the `-ExecutionPolicy Bypass` launch flag, which together are the opening line of essentially every PowerShell-based loader. It is also occasionally what a developer legitimately needs, which is why it holds rather than blocks. Does NOT match reading the policy (`Get-ExecutionPolicy`), setting it to RemoteSigned, or an ordinary `powershell -Command`. Windows-only by nature. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

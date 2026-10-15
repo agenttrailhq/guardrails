@@ -14,6 +14,7 @@ export const rceUnverifiedPackage: Rule = {
   category: "rce-supply-chain",
   severity: "medium",
   defaultAction: "require_approval",
+  owasp: ["ASI04", "ASI05", "LLM04", "LLM07"],
   title: "Installing a package from a URL or a git ref",
   description:
     'Holds an install whose source is a URL, a git reference or a tarball rather than a registry name — `npm i git+https://…`, `pip install git+…`, `cargo install --git`, `go install …@main`. A registry entry is at least a name a person recognises and a version a lockfile can pin; a moving git ref is neither. Does NOT match an ordinary registry install, which is flag-dependency-install\'s job. It MISSES a git dependency declared in a manifest file rather than typed as a command. Global flags between the package manager and its subcommand are tolerated (`npm --silent i git+…`, `pip --no-cache-dir install …`), and an absolute tool path still matches; `cargo` and `go` are matched by their own contiguous forms, and a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

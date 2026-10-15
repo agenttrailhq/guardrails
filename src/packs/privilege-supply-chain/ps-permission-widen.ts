@@ -16,6 +16,7 @@ export const psPermissionWiden: Rule = {
   category: "privilege-supply-chain",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI03"],
   title: "Making a file writable by everyone",
   description:
     'Holds a permission change that opens a file or directory to every account on the machine — `chmod 777`, `chmod a+rwx`, a setuid bit, or an icacls grant of full control to Everyone. It is the reflex fix for a permissions error and almost never the right one. The ordinary chmods that sit beside it are deliberately NOT matched: `chmod +x`, `chmod 644`, `chmod 755`. It cannot see WHAT is being widened, only that it is. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

@@ -11,6 +11,7 @@ export const requireApprovalRmRf: Rule = {
   category: "working-tree",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "Hold `rm -rf` for approval",
   description:
     'Recursive-force delete: held for approval rather than blocked, which is the honest strength for an operation that is destructive but often legitimate. Catches -rf, -Rf, -rvf and the reversed -fr spelling in any case, `rm --recursive`, and PowerShell\'s `Remove-Item -Recurse`. Clearing a build directory is EXEMPT (node_modules, dist, build, out, coverage, target, .next, .turbo, .cache, .vite, .parcel-cache): that shape appears about 220 times in real Claude Code traces against about 3 for a dangerous delete, and a rule that asks every time is a rule people switch off. An absolute path, a $VARIABLE, a ~ path or a source directory still asks. Does NOT match a delete via a file tool, or flags split across arguments such as `rm -r -f x`. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

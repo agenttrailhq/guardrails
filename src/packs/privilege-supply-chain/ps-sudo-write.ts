@@ -12,6 +12,7 @@ export const psSudoWrite: Rule = {
   category: "privilege-supply-chain",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI03"],
   title: "sudo used to write or to run a shell",
   description:
     'Holds a `sudo` that writes or spawns a shell — `sudo tee`, `sudo dd`, `sudo cp/mv/rm/ln/install`, `sudo chown`, `sudo sh -c` — as opposed to a `sudo` that reads or queries. The read/query forms are deliberately NOT matched: `sudo apt-get update`, `sudo -l` and `sudo systemctl status` are ordinary. It reads the command\'s own words, so it MISSES a write performed by a script invoked with sudo, and it cannot tell which path is being written to. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

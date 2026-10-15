@@ -15,6 +15,7 @@ export const piTerraformStateMutate: Rule = {
   category: "prod-infra",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "Hand-editing Terraform state",
   description:
     'Mutates the Terraform state file directly — `state rm`, `state mv`, `state push`, `taint`, `untaint`, `force-unlock`. None of these changes any infrastructure by itself; they change what the NEXT apply believes exists, which is how a `state rm` turns into a destroyed resource two commands later. The read-only commands are deliberately NOT matched (`state list`, `state show`, `state pull`, `show`). It cannot see which backend or workspace is selected. A global option between the tool and `state`/`taint`/`force-unlock` is tolerated (`terraform -chdir=<dir> state rm …`, `--no-color`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

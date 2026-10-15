@@ -15,6 +15,7 @@ export const wtCleanFdx: Rule = {
   category: "working-tree",
   severity: "high",
   defaultAction: "block",
+  owasp: ["ASI02", "LLM03"],
   title: "git clean -fd deletes untracked files",
   description:
     'Deletes untracked files and directories, and with `-x` the git-ignored ones too — which on a working checkout means local `.env` files, certificates and scratch work that exist nowhere else. Git holds no copy of any of it. The dry-run forms (`git clean -nd`, `--dry-run`) are deliberately NOT matched, since that is what a careful person runs first. Known miss: `git clean` driven from a wrapper script whose own text does not name it. Global flags between `git` and `clean` are tolerated on both the block and the dry-run exemption (`git -C <dir> clean -fd`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

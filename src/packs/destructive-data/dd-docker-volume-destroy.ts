@@ -12,6 +12,7 @@ export const ddDockerVolumeDestroy: Rule = {
   category: "destructive-data",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "Docker volume deletion destroys container data",
   description:
     'Deletes Docker volumes, which is where a database running in a container keeps its data — `docker compose down -v` is one character away from `docker compose down` and the character is the difference between stopping the stack and losing its contents. Does NOT match `docker compose down` without the flag, `docker ps`, or `docker volume ls`, and it cannot tell a throwaway test volume from the one holding your local development data. Global flags between `docker` and its subcommand are tolerated (`docker --context <name> compose down -v`, `-H <host>`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

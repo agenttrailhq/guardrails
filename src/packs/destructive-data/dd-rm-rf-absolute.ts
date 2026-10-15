@@ -17,6 +17,7 @@ export const ddRmRfAbsolute: Rule = {
   category: "destructive-data",
   severity: "critical",
   defaultAction: "block",
+  owasp: ["ASI02", "LLM03"],
   title: "rm -rf against an absolute path",
   description:
     'Recursive-force delete rooted at `/` rather than at a relative path. Deliberately does NOT fire on `rm -rf ./node_modules` or `rm -rf build`, which are safe and happen many times a day. Both the r and the f flag are required, so `rm -f /tmp/app.pid` is not blocked either. Known misses: the long forms (`rm --recursive --force /`), a quoted target (`rm -rf "/"`), and a variable target (`rm -rf $DIR`) whose value is only known at run time — for those, see require-approval-rm-rf, which holds them for approval instead. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

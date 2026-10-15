@@ -14,6 +14,7 @@ export const seEnvPrint: Rule = {
   category: "secret-exposure",
   severity: "medium",
   defaultAction: "warn",
+  owasp: ["ASI02", "ASI03", "LLM02"],
   title: "Printing the environment or a dotenv file",
   description:
     'Surfaces the environment or a dotenv file being printed into the terminal, where it lands in scrollback and in the session transcript. Committed placeholder files are excluded (`.env.example`, `.env.sample`, `.env.template`). Does NOT match the POSIX `env VAR=value <command>` form, which sets a variable rather than printing one, and does NOT match a `.env` opened by a file tool — that travels the file channel and is covered by block-env-file-read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

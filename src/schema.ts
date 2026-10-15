@@ -1,15 +1,17 @@
 /**
  * The guardrails rule format — self-contained, and deliberately so.
  *
- * This file defines the rule format and imports nothing but zod, so the package
- * builds on its own. The condition and match shapes mirror the evaluator's rather
- * than importing them; a change to either has to be made in both places.
+ * This file defines the rule format and imports nothing but zod and the OWASP id list
+ * (`./owasp.ts`, plain data), so the package builds on its own. The condition and match
+ * shapes mirror the evaluator's rather than importing them; a change to either has to be
+ * made in both places.
  *
  * A rule carries `defaultAction` (what the guard does when it matches) and no
  * `version`; the package version is the corpus version.
  */
 
 import { z } from "zod";
+import { isOwaspId, type OwaspId, owaspIndex } from "./owasp.js";
 
 // ── Severity ────────────────────────────────────────────────────────────────
 
@@ -326,6 +328,84 @@ export const FixturesSchema = z
   })
   .strict();
 
+// ── OWASP ids ───────────────────────────────────────────────────────────────
+
+/**
+ * Explain why one entry of an `owasp` list is not an id. A real id written in lower case or with
+ * the list's year suffix (`asi02`, `LLM06:2026`) gets the exact spelling to use instead.
+ */
+function unknownOwaspIdMessage(value: unknown): string {
+  const shown = typeof value === "string" ? `\`${value}\`` : JSON.stringify(value);
+  if (typeof value === "string") {
+    const fixed = value
+      .trim()
+      .toUpperCase()
+      .replace(/:\d{4}$/, "");
+    if (isOwaspId(fixed)) {
+      return `owasp: ${shown} is not an OWASP id. Use the upper-case id without a suffix: \`${fixed}\``;
+    }
+  }
+  return `owasp: ${shown} is not an OWASP id. Use an id from the OWASP Top 10 for Agentic Applications (ASI01 to ASI10) or for LLM Applications 2026 (LLM01 to LLM10)`;
+}
+
+/**
+ * The OWASP risks a rule addresses, e.g. `["ASI02", "LLM03"]`.
+ *
+ * - Every entry is one of `OWASP_IDS`, spelled exactly: upper-case, no `:2026` suffix.
+ * - No id twice, and the list is in `OWASP_IDS` order (ASI ids before LLM ids, each ascending),
+ *   so a rule's ids have one spelling and a diff of them is a diff of meaning.
+ * - Not empty. A rule that cites no risk omits the field.
+ *
+ * The parsed type is `OwaspId[]`, so a typo is a compile error for a TypeScript author too.
+ * Each problem is reported at the entry it concerns (`owasp.<i>`), or at `owasp` for order and
+ * emptiness, in words a person can act on, because `guardrails validate` prints them.
+ */
+export const OwaspIdsSchema = z
+  .array(z.unknown())
+  .superRefine((ids, ctx) => {
+    if (ids.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "owasp: omit the field rather than giving an empty list",
+      });
+      return;
+    }
+    const seen = new Set<string>();
+    let clean = true;
+    ids.forEach((id, i) => {
+      if (!isOwaspId(id)) {
+        clean = false;
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [i],
+          message: unknownOwaspIdMessage(id),
+        });
+        return;
+      }
+      if (seen.has(id)) {
+        clean = false;
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [i],
+          message: `owasp: \`${id}\` is listed twice`,
+        });
+      }
+      seen.add(id);
+    });
+    if (!clean) return;
+    const indexes = (ids as OwaspId[]).map(owaspIndex);
+    if (indexes.some((at, i) => i > 0 && at < (indexes[i - 1] ?? at))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "owasp: out of order; list ASI ids before LLM ids, each ascending",
+      });
+    }
+  })
+  .transform((ids) => ids as OwaspId[]) as unknown as z.ZodType<OwaspId[], z.ZodTypeDef, OwaspId[]>;
+// The cast fixes the INPUT type as well as the output: `z.array(z.unknown())` would make
+// `RuleInput["owasp"]` `unknown[]`, so a typo in `defineRule({ owasp: [...] })` would compile and
+// only fail at load. The runtime checks above are unchanged and still run on any input.
+
 // ── The rule ────────────────────────────────────────────────────────────────
 
 /**
@@ -349,6 +429,12 @@ export const RuleSchema = z
     defaultAction: ActionSchema,
     title: z.string().min(1),
     description: z.string().min(1),
+    /**
+     * The OWASP risks this rule addresses. Optional: a rule that cites none omits it. An id is
+     * never a claim that the rule covers the whole risk, only that it acts where the risk turns
+     * into a command or a file change.
+     */
+    owasp: OwaspIdsSchema.optional(),
     match: MatchSchema,
     fixtures: FixturesSchema,
   })

@@ -13,6 +13,7 @@ export const seSecretManagerRead: Rule = {
   category: "secret-exposure",
   severity: "medium",
   defaultAction: "warn",
+  owasp: ["ASI02", "ASI03", "LLM02"],
   title: "Reading a secret out of a secrets manager",
   description:
     'Surfaces a secret being read from AWS Secrets Manager or SSM, HashiCorp Vault, Google Secret Manager, Azure Key Vault, a Kubernetes secret dumped as yaml or json, or Doppler. Non-blocking: this is a normal step in a normal day, and the value is that it is visible afterwards. The listing commands are deliberately NOT matched (`list-secrets`, `vault status`, `kubectl get secrets` without an output flag). It does NOT see a secret read by application code, by an SDK, or from an environment variable already in the process. Global flags between a secrets CLI and its subcommand are tolerated (`aws --profile <p> secretsmanager …`, `kubectl -n <ns> get secret …`, `--region <r>`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

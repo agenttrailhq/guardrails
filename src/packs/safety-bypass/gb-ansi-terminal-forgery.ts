@@ -21,6 +21,7 @@ export const gbAnsiTerminalForgery: Rule = {
   category: "safety-bypass",
   severity: "medium",
   defaultAction: "warn",
+  owasp: ["ASI09", "LLM10"],
   title: "Emitting raw terminal control sequences",
   description:
     "Warns when `echo` or `printf` emits a raw terminal control sequence — the escape introducer `\\x1b`, `\\033` or `\\e` followed by `[` (a CSI: cursor moves, screen clears, colour) or `]` (an OSC: `]0;` sets the window title, `]8;;` plants a clickable hyperlink). Rendered into a terminal, log or IDE that does not neutralise them, these forge what a human reads back. This is a broad `warn` on purpose: a colourised build line trips it too, and that is an acceptable cost for a warning. Because its own trigger is an `echo`/`printf`, the `echo` quoted-MENTION carrier is NOT exempt here — an `echo` that prints an escape is exactly the case — while a search, a `git commit -m` message and a `curl --data` body that only name one are left alone. Matches the escape written as a backslash sequence in the command text. MISSES a raw ESC byte pasted literally, a sequence printed by a compiled program or a script file rather than an inline `echo`/`printf`, and `tput`, which reads terminfo and emits nothing literal in the command. The exemption holds only while every shell metacharacter stays inside the quotes.",

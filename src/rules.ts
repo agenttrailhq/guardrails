@@ -10,8 +10,8 @@
  *
  * The package ROOT cannot satisfy that: `index.ts` re-exports `./schema.js`, which
  * value-imports zod. So the guard imports `@agenttrail/guardrails/guardrails` — this
- * file — whose whole import graph is `./packs.js`, `./exemptions.js` and
- * `./fixtures.js` (all three plain data) plus a TYPE-only
+ * file — whose whole import graph is `./packs.js`, `./exemptions.js`, `./fixtures.js`
+ * and `./owasp.js` (all four plain data) plus a TYPE-only
  * reference to `./schema.js`, which esbuild erases. Everyone else keeps using the
  * root and gets the schema with it.
  *
@@ -45,6 +45,8 @@ import type { Rule } from "./schema.js";
 
 export * from "./exemptions.js";
 export * from "./fixtures.js";
+/** The OWASP id lists a rule's `owasp` field cites. Plain data, so this entry stays zod-free. */
+export * from "./owasp.js";
 export * from "./packs.js";
 /**
  * The rule TYPES, re-exported so a consumer of this subpath does not have to

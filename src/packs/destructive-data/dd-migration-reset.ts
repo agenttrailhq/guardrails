@@ -13,6 +13,7 @@ export const ddMigrationReset: Rule = {
   category: "destructive-data",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "Migration reset drops and rebuilds the schema",
   description:
     "Drops the schema and replays migrations from scratch — Prisma's `migrate reset`, Alembic's `downgrade base`, `rails db:reset`, Django's `flush`, Sequelize's `migrate:undo:all` and Drizzle's `drop`. Held for approval rather than blocked because it is the correct thing to do against a scratch database many times a day. The guard cannot see WHICH database is configured (no environment, no connection string reaches it), so it cannot distinguish a local reset from a production one. Does NOT match the forward commands (`migrate dev`, `migrate deploy`, `upgrade head`, `migrate:latest`). A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",

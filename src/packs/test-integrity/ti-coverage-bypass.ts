@@ -16,6 +16,7 @@ export const tiCoverageBypass: Rule = {
   category: "test-integrity",
   severity: "medium",
   defaultAction: "warn",
+  owasp: ["ASI09"],
   title: "Passing a test run with no tests or no coverage gate",
   description:
     "Warns on a test run told to pass with nothing to check, or with its coverage gate off: `--passWithNoTests` (Jest, Vitest), pytest-cov's `--no-cov` and `--cov-fail-under=0`, `--coverage=false`, `--collectCoverage=false`, `--coverage.enabled=false` and `--no-coverage`, nyc's and c8's `--check-coverage=false` and `--no-check-coverage`, and a Vitest coverage threshold set to 0 on the command line. Each turns a check that would fail into one that reports success. A warning, not a hold: running without coverage locally is common. Deliberately NOT matched: `--no-cov-on-fail`, `--check-coverage` on its own, which makes the gate stricter, and a non-zero threshold. Misses a threshold lowered to any other number, a gate switched off in a config file (`ti.test-config-edit` holds the dedicated ones), and a coverage step removed from a CI workflow (`fs.ci-definition` holds those files). A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",

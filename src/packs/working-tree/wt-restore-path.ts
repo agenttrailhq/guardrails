@@ -18,6 +18,7 @@ export const wtRestorePath: Rule = {
   category: "working-tree",
   severity: "high",
   defaultAction: "block",
+  owasp: ["ASI02", "LLM03"],
   title: "git restore discards uncommitted changes to a path",
   description:
     'Overwrites files in the working tree from the index, discarding uncommitted edits to them. `git restore --staged` is deliberately NOT matched: it only unstages, and the file on disk is untouched. The cost of that exclusion is a known miss — `git restore --staged --worktree <path>` DOES discard and is exempted here, because expressing the distinction needs a negative lookahead this corpus does not use. Global flags between `git` and `restore` are tolerated on both the block and the `--staged` exemption (`git -C <dir> restore .`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
