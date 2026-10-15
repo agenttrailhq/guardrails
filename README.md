@@ -9,9 +9,9 @@
   </picture>
 </a>
 
-# AgentTrail Guardrails: open-source rules for AI coding agents
+# AgentTrail Guardrails: an open-source guardrail library for AI coding agents
 
-**A library of rules for catching dangerous commands before an AI coding agent runs them.**<br />
+**A library of guardrails for catching dangerous commands before an AI coding agent runs them.**<br />
 Plain data you can read, test, and change. Enforced in **Claude Code**, **Cursor**, and **Codex CLI**.
 
 [![CI](https://github.com/agenttrailhq/guardrails/actions/workflows/ci.yml/badge.svg)](https://github.com/agenttrailhq/guardrails/actions/workflows/ci.yml)
@@ -22,13 +22,13 @@ Plain data you can read, test, and change. Enforced in **Claude Code**, **Cursor
 [Quick start](#quick-start) ·
 [The packs](#the-eleven-packs) ·
 [OWASP coverage](#owasp-coverage) ·
-[Rule format](#a-rule-start-to-finish) ·
-[Contribute a rule](#contributing-a-rule) ·
+[Guardrail format](#a-guardrail-start-to-finish) ·
+[Contribute a guardrail](#contributing-a-guardrail) ·
 [Changelog](CHANGELOG.md)
 
 </div>
 
-[74 rules](https://www.agenttrail.sh/guardrails), grouped into 11 packs. Apache-2.0. Published
+[74 guardrails](https://www.agenttrail.sh/guardrails), grouped into 11 packs. Apache-2.0. Published
 as `@agenttrail/guardrails` and enforced by [AgentTrail Guard](https://github.com/agenttrailhq/guard).
 
 ![A Claude Code session: asked to split a name column and push the schema, the agent edits the Prisma schema and seed, then runs npx prisma db push --force-reset to wipe the database. AgentTrail Guard blocks it with the guardrail dd.accept-data-loss, and the agent stops](.github/assets/guard-blocks-force-reset.gif)
@@ -48,28 +48,28 @@ for, how serious it is, and what should happen: allow it, ask a human first, or 
 **That is all this package does.** It contains no code that watches your machine and nothing that
 talks to the network. Something else has to read the list and act on it: normally
 [`agenttrail-guard`](https://github.com/agenttrailhq/guard), which runs on your laptop and checks each
-command an agent proposes against these rules.
+command an agent proposes against these guardrails.
 
-## Why these rules?
+## Why these guardrails?
 
-- **Readable.** Every rule is plain data with a title, a severity, a default action, and a
+- **Readable.** Every guardrail is plain data with a title, a severity, a default action, and a
   description that says what it catches **and what it misses**.
-- **Proven in both directions.** Every rule ships commands it must catch and near-misses it must
-  leave alone, and a shared corpus of everyday commands no rule may match. A rule that fails
+- **Proven in both directions.** Every guardrail ships commands it must catch and near-misses it must
+  leave alone, and a shared corpus of everyday commands no guardrail may match. A guardrail that fails
   either side does not build.
 - **Quiet on purpose.** A commit message or a `grep` that only *mentions* `rm -rf /` is not
   treated as running it. See [Talking about a command is not running it](#talking-about-a-command-is-not-running-it).
 - **Mapped to known risks.** The packs line up with the
   [OWASP Top 10s for agentic and LLM applications](#owasp-coverage), and the gaps are stated, not
   hidden.
-- **Separate from the enforcer.** You can read, disagree with, and change any rule without
+- **Separate from the enforcer.** You can read, disagree with, and change any guardrail without
   trusting anything about the tool that enforces it.
 
 ## Quick start
 
 **You need:** Node.js 22.13 or newer.
 
-### Enforce the rules in your agent
+### Enforce the guardrails in your agent
 
 Most people never install this package directly. [AgentTrail Guard](https://github.com/agenttrailhq/guard)
 bundles it, so installing Guard is all it takes:
@@ -77,18 +77,18 @@ bundles it, so installing Guard is all it takes:
 ```bash
 npm install -g @agenttrail/guard
 agenttrail-guard init --agent claude              # or: --agent cursor, --agent codex
-agenttrail-guard guardrails list                  # every rule and its current action
-agenttrail-guard guardrails show wt.reset-hard    # one rule in full
-agenttrail-guard guardrails set-action <id> warn  # change what a rule does
-agenttrail-guard guardrails allow <id> <pattern>  # silence one rule for one command shape
+agenttrail-guard guardrails list                  # every guardrail and its current action
+agenttrail-guard guardrails show wt.reset-hard    # one guardrail in full
+agenttrail-guard guardrails set-action <id> warn  # change what a guardrail does
+agenttrail-guard guardrails allow <id> <pattern>  # silence one guardrail for one command shape
 ```
 
 See the [AgentTrail Guard README](https://github.com/agenttrailhq/guard#quick-start) for setup
 and everything else Guard can do.
 
-### Use the rules in your own code
+### Use the guardrails in your own code
 
-Install the package if you are writing rules, or building your own tool on top of the list:
+Install the package if you are writing guardrails, or building your own tool on top of the list:
 
 ```bash
 npm install @agenttrail/guardrails
@@ -99,24 +99,24 @@ import { RULES, getRule, rulesForPack } from "@agenttrail/guardrails/guardrails"
 
 // Everything that refuses outright, rather than asking or warning.
 const blocking = RULES.filter((rule) => rule.defaultAction === "block");
-console.log(`${RULES.length} rules, ${blocking.length} block by default`);
+console.log(`${RULES.length} guardrails, ${blocking.length} block by default`);
 
-// One pack, with each rule's severity and default action.
+// One pack, with each guardrail's severity and default action.
 for (const rule of rulesForPack("secret-exposure")) {
   console.log(rule.id, rule.severity, rule.defaultAction);
 }
 
-// One rule, including the limits its description admits to.
+// One guardrail, including the limits its description admits to.
 console.log(getRule("wt.reset-hard")?.description);
 ```
 
-This package has no evaluator: it tells you what each rule looks for, not whether a given
+This package has no evaluator: it tells you what each guardrail looks for, not whether a given
 command matches. Guard does the matching. [Two ways to import it](#two-ways-to-import-it)
 explains the two entry points.
 
-## A rule, start to finish
+## A guardrail, start to finish
 
-Here is a complete rule. Nothing is hidden; this is the actual shape.
+Here is a complete guardrail. Nothing is hidden; this is the actual shape.
 
 ```jsonc
 {
@@ -135,7 +135,7 @@ Here is a complete rule. Nothing is hidden; this is the actual shape.
     ]
   },
 
-  // Proof it works, in both directions (see "Every rule proves both directions" below).
+  // Proof it works, in both directions (see "Every guardrail proves both directions" below).
   "fixtures": {
     "block": ["git reset --hard"],
     "allow": ["git reset src/api.ts"]
@@ -143,33 +143,33 @@ Here is a complete rule. Nothing is hidden; this is the actual shape.
 }
 ```
 
-The real rule is in [`wt-reset-hard.ts`](src/packs/working-tree/wt-reset-hard.ts); this is a
+The real guardrail is in [`wt-reset-hard.ts`](src/packs/working-tree/wt-reset-hard.ts); this is a
 trimmed copy. With it enforced by Guard, an agent that proposes `git reset --hard` is refused
-and told which rule stopped it, while `git reset src/api.ts`, which unstages one file, goes
+and told which guardrail stopped it, while `git reset src/api.ts`, which unstages one file, goes
 ahead as normal.
 
 Reading the fields:
 
 | Field | What it means |
 |---|---|
-| `id` | A stable name. Users type it to disable or change a rule, so it never changes. |
+| `id` | A stable name. Users type it to disable or change a guardrail, so it never changes. |
 | `severity` | How bad the thing being caught is: `critical`, `high`, `medium`, `low`, `info`. **It is not a price**: this package ships no mapping from severity to money. |
 | `defaultAction` | What should happen: `block` (refuse), `require_approval` (ask a human), or `warn` (allow, but say so). A user can override it. |
-| `description` | What the rule catches **and what it misses**. The honest limits are part of the rule, not a footnote. |
-| `owasp` | Optional. The [OWASP risks](#owasp-coverage) the rule addresses, as ids such as `ASI02` or `LLM06`, in list order. Every rule in this package has at least one. Versions up to and including 0.2.2 reject the field, so validate a rule that carries it with 0.2.3 or later. |
+| `description` | What the guardrail catches **and what it misses**. The honest limits are part of the guardrail, not a footnote. |
+| `owasp` | Optional. The [OWASP risks](#owasp-coverage) the guardrail addresses, as ids such as `ASI02` or `LLM06`, in list order. Every guardrail in this package has at least one. Versions up to and including 0.2.2 reject the field, so validate a guardrail that carries it with 0.2.3 or later. |
 | `match` | The condition. `any_of` means "any one of these is enough". |
 | `fixtures` | Examples that must match, and examples that must not. |
 
 ## The eleven packs
 
-A rule is filed by **the harm it prevents**, never by the technique it uses to spot it.
+A guardrail is filed by **the harm it prevents**, never by the technique it uses to spot it.
 
-That sounds like a detail and is not. The three rules about production config, `.env` files and API
+That sounds like a detail and is not. The three guardrails about production config, `.env` files and API
 endpoints all work by matching file paths, but they are *not* in `file-scope`. Someone who turned
 that pack off to stop path noise would otherwise silently lose their production and secret
 protection, which they never asked to turn off and would not know they had.
 
-| Pack | Rules | What it is about |
+| Pack | Guardrails | What it is about |
 |---|---:|---|
 | [`working-tree`](src/packs/working-tree/) | 9 | Destroying uncommitted work or published history: `git reset --hard`, `git clean -fd`, force-push, `rm -rf`. |
 | [`destructive-data`](src/packs/destructive-data/) | 8 | Data git cannot bring back: a dropped volume, a dropped database, destructive DDL, a deleted shadow copy. |
@@ -185,10 +185,10 @@ protection, which they never asked to turn off and would not know they had.
 
 Pack names appear in user config files, so renaming one is a breaking change, not a tidy-up.
 
-Each pack name links to its source folder: one TypeScript file per rule, so you can read any rule
-end to end. Every rule, with its full description and tested examples, is also in the
+Each pack name links to its source folder: one TypeScript file per guardrail, so you can read any guardrail
+end to end. Every guardrail, with its full description and tested examples, is also in the
 [guardrail library](https://www.agenttrail.sh/guardrails) on the AgentTrail website, where you
-can paste a command to see which rules match it.
+can paste a command to see which guardrails match it.
 
 ## OWASP coverage
 
@@ -196,8 +196,8 @@ Several packs exist because of risks named in OWASP's two lists for AI systems: 
 [Top 10 for Agentic Applications](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)
 (ASI01 to ASI10, 2026 edition) and the
 [Top 10 for LLM Applications](https://genai.owasp.org/resource/owasp-genai-llm-top-10-2026/)
-(LLM01 to LLM10, 2026 edition). A rule cannot see a prompt or a model's reasoning, only the
-action that comes out of it, so these rules address a risk at the point where it turns into a
+(LLM01 to LLM10, 2026 edition). A guardrail cannot see a prompt or a model's reasoning, only the
+action that comes out of it, so these guardrails address a risk at the point where it turns into a
 command or a file change.
 
 | Pack | Agentic risks | LLM risks | Default action |
@@ -210,25 +210,25 @@ command or a file change.
 | `agent-context` | ASI03 Identity and Privilege Abuse (`ac.agent-autonomy-flag`), ASI04 Agentic Supply Chain (`ac.mcp-server-add`), ASI06 Memory and Context Poisoning (the write, not its contents), ASI10 Rogue Agents | LLM03 Excessive Agency | `require_approval` |
 | `test-integrity` | ASI10 Rogue Agents, ASI09 Human-Agent Trust Exploitation | | Mostly `warn`; deleting a test file or editing a test runner's configuration is `require_approval` |
 
-Each rule lists the ids it addresses in its own `owasp` field, so
-`RULES.filter((rule) => rule.owasp?.includes("ASI06"))` gives the rules behind one risk. Each row
-above is the union of its packs' ids, with the rule named where only one rule in the pack carries
-an id. A test keeps the table and the rules' ids equal.
+Each guardrail lists the ids it addresses in its own `owasp` field, so
+`RULES.filter((rule) => rule.owasp?.includes("ASI06"))` gives the guardrails behind one risk. Each row
+above is the union of its packs' ids, with the guardrail named where only one guardrail in the pack carries
+an id. A test keeps the table and the guardrails' ids equal.
 
-Read the default action before relying on a risk. A `warn` rule lets the action proceed and records
+Read the default action before relying on a risk. A `warn` guardrail lets the action proceed and records
 it; only `require_approval` and `block` stop it. Reading a secret is a normal part of a normal day,
-so most secret-exposure rules warn, and a dependency install is flagged, not held. A file tool
+so most secret-exposure guardrails warn, and a dependency install is flagged, not held. A file tool
 carries a path rather than content, so `ac.memory-store-edit` cannot see what was written to a
-memory file. You can change any rule's action in your own configuration.
+memory file. You can change any guardrail's action in your own configuration.
 
-What the rules cannot address, by design:
+What the guardrails cannot address, by design:
 
-- **Prompt injection and goal hijack (LLM01, ASI01).** The rules never see the input that
+- **Prompt injection and goal hijack (LLM01, ASI01).** The guardrails never see the input that
   redirected the agent. They can only stop the action it led to.
-- **Anything that needs memory across commands (LLM06, ASI08).** A rule sees one command at a
+- **Anything that needs memory across commands (LLM06, ASI08).** A guardrail sees one command at a
   time, so it cannot count, rate-limit, or spot a runaway loop.
 - **Model, training and retrieval risks (LLM05, LLM08, LLM09), and traffic between agents
-  (ASI07).** These happen somewhere a command rule never reaches.
+  (ASI07).** These happen somewhere a command guardrail never reaches.
 
 For the item-by-item matrix, including how the rest of AgentTrail covers each risk, see the
 [AgentTrail OWASP coverage page](https://www.agenttrail.sh/security/owasp). AgentTrail is an
@@ -236,10 +236,10 @@ independent project, not affiliated with or endorsed by OWASP.
 
 ## Talking about a command is not running it
 
-This is the single most important thing to understand about how these rules behave.
+This is the single most important thing to understand about how these guardrails behave.
 
-A rule sees the command as one line of text. Nothing in that text distinguishes a command that
-**runs** something from one that merely **mentions** it. Left alone, that makes the rule set unusable
+A guardrail sees the command as one line of text. Nothing in that text distinguishes a command that
+**runs** something from one that merely **mentions** it. Left alone, that makes the guardrail set unusable
 by exactly the people most likely to install it:
 
 ```bash
@@ -247,7 +247,7 @@ git commit -m "fix: document rm -rf / risk"    # would have been a hard refusal
 grep -rn "rm -rf /" docs/                       # so would this
 ```
 
-So every command rule ignores four **carriers**, verbs that handle their arguments as text and never
+So every command guardrail ignores four **carriers**, verbs that handle their arguments as text and never
 execute them:
 
 | Carrier | Example |
@@ -271,16 +271,16 @@ echo "rm -rf /" | bash                        # NOT exempt: the pipe runs it
 echo "$(rm -rf /var)"                         # NOT exempt: the shell expands `$( )`
 ```
 
-Five rules deliberately keep firing on one carrier each, because that carrier *is* their trigger:
-`gb.git-no-verify` on a `git commit`, `se.token-print` on an `echo`, the `curl`/`wget` rules on an
-HTTP body. Each rule's `description` says which, and why.
+Five guardrails deliberately keep firing on one carrier each, because that carrier *is* their trigger:
+`gb.git-no-verify` on a `git commit`, `se.token-print` on an `echo`, the `curl`/`wget` guardrails on an
+HTTP body. Each guardrail's `description` says which, and why.
 
-### The one rule where a mention IS the danger
+### The one guardrail where a mention IS the danger
 
 `block-hardcoded-secrets` is the exception, and it is worth understanding.
 
 Everywhere else a carrier is genuinely harmless: a commit message naming `rm -rf /` deletes nothing.
-But that rule's subject is a **string**, not an action, so two of the four carriers are not mentions
+But that guardrail's subject is a **string**, not an action, so two of the four carriers are not mentions
 at all. They are the exposure itself:
 
 | Carrier | What happens to the key | Exempt? |
@@ -293,43 +293,43 @@ at all. They are the exposure itself:
 The cost, stated in the other direction: documenting a real-looking key in a commit message is still
 blocked. Redact the body of the key, or use a placeholder short enough to fail the length check.
 
-The finer limits of the carrier logic, and how command rules apply to MCP tools, are in the
+The finer limits of the carrier logic, and how command guardrails apply to MCP tools, are in the
 [Reference](#reference).
 
-## What these rules deliberately do not catch
+## What these guardrails deliberately do not catch
 
 Stated here rather than discovered later. Every one is a real limit of the format, not something
 somebody forgot.
 
-- **Nothing about the web.** Pages an agent fetches are not checked, and there are no URL rules.
+- **Nothing about the web.** Pages an agent fetches are not checked, and there are no URL guardrails.
 - **Nothing inside a file.** The checker sees a file's *path*, never its contents. A secret typed into
   a source file, SQL built by string concatenation, a missing auth check: none of it is visible.
-  Rules that would need it are absent rather than approximated.
+  Guardrails that would need it are absent rather than approximated.
 - **Nothing about where you are.** No working directory, no project root, no git branch, no cloud
   profile reaches the checker; it gets one command and nothing else. So "the agent wrote outside the
-  project" **cannot be written as a rule**, and `file-scope` is limited to well-known absolute paths
-  for good. For the same reason, a rule cannot tell a scratch database from a production one.
+  project" **cannot be written as a guardrail**, and `file-scope` is limited to well-known absolute paths
+  for good. For the same reason, a guardrail cannot tell a scratch database from a production one.
 - **Nothing hidden inside a quoted payload.** Where the danger is inside a quoted argument
-  (`psql -c "<sql>"`, `python -c "<code>"`), a text rule can only guess. In a long script, a match
+  (`psql -c "<sql>"`, `python -c "<code>"`), a text guardrail can only guess. In a long script, a match
   says very little about what the script actually does.
 - **Nothing a wrapper hides.** `./deploy.sh` that runs `terraform apply -auto-approve` inside it is
   just a shell script from the outside.
 - **Nothing recurring.** There is no counting. "The same mistake three times this week" needs memory
   across commands, and a single command has none.
 
-Each rule's own `description` names its specific misses. Read those before trusting a rule to cover a
+Each guardrail's own `description` names its specific misses. Read those before trusting a guardrail to cover a
 case; they are written to be believed, not to sell.
 
-## Every rule proves both directions
+## Every guardrail proves both directions
 
-Every rule ships at least one **`block`** example and at least one **`allow`** example. A rule missing
+Every guardrail ships at least one **`block`** example and at least one **`allow`** example. A guardrail missing
 either does not build.
 
-- **`block` means "this rule must match."** It does *not* mean the agent is refused; most packs
+- **`block` means "this guardrail must match."** It does *not* mean the agent is refused; most packs
   default to asking or warning.
-- **`allow` means "this rule must NOT match."** *This is the half that matters.* Anyone can write a
-  rule that catches `rm -rf /`. The hard part is not firing on `rm -rf ./node_modules` forty times a
-  day, and a rule with no negative example has not shown it can tell them apart.
+- **`allow` means "this guardrail must NOT match."** *This is the half that matters.* Anyone can write a
+  guardrail that catches `rm -rf /`. The hard part is not firing on `rm -rf ./node_modules` forty times a
+  day, and a guardrail with no negative example has not shown it can tell them apart.
 
 Examples come in two kinds, and each must use the right one:
 
@@ -338,13 +338,13 @@ Examples come in two kinds, and each must use the right one:
 | a command | `Bash`, `PowerShell`, a search query, an MCP tool's input |
 | a file path | `Edit`, `Write`, `Read`, `MultiEdit`, `NotebookEdit` |
 
-Giving a path-matching rule a command example makes it pass **without testing anything**: it matches
-nothing, which reads as proof of quietness and proves only that the path never reached the rule. CI
+Giving a path-matching guardrail a command example makes it pass **without testing anything**: it matches
+nothing, which reads as proof of quietness and proves only that the path never reached the guardrail. CI
 rejects that.
 
-## Contributing a rule
+## Contributing a guardrail
 
-Rules are meant to be contributed. The bar is not "clever regex"; it is **does it fire on the real
+Guardrails are meant to be contributed. The bar is not "clever regex"; it is **does it fire on the real
 thing, and stay quiet on the near-miss**.
 
 **1. Write it**, following the shape above. Give it a `description` that says what it misses.
@@ -361,10 +361,10 @@ if (!result.success) console.error(result.error.issues);
 Or, if you have the guard installed:
 
 ```bash
-agenttrail-guard guardrails validate ./my-rule.json
+agenttrail-guard guardrails validate ./my-guardrail.json
 ```
 
-**3. Understand what that does and does not tell you.** It answers *"is this a well-formed rule?"* It
+**3. Understand what that does and does not tell you.** It answers *"is this a well-formed guardrail?"* It
 does **not** answer *"does it actually fire on the command I think it does?"* That needs the real
 checker, which is not part of this package.
 
@@ -372,18 +372,18 @@ checker, which is not part of this package.
 everyone. You get the shape check instantly here and the real answer there, which is where it has to
 run to be trusted anyway.
 
-Your rule is also run against a **quiet corpus**: hundreds of everyday commands and paths that no
-rule may match at all. Your own negative example only proves your rule is quiet on the near-miss
-*you* thought of. The quiet corpus is what catches a Terraform rule firing on `pnpm test`.
+Your guardrail is also run against a **quiet corpus**: hundreds of everyday commands and paths that no
+guardrail may match at all. Your own negative example only proves your guardrail is quiet on the near-miss
+*you* thought of. The quiet corpus is what catches a Terraform guardrail firing on `pnpm test`.
 
 ### Shapes that will not validate
 
-Three are rejected outright, each because it produces a rule that *looks* enforced and is not: the
+Three are rejected outright, each because it produces a guardrail that *looks* enforced and is not: the
 worst failure a security tool can have.
 
 | Rejected | Why |
 |---|---|
-| `scope` | It compares against ids that are always UUIDs, never a vendor name, so a scoped rule matches nothing, forever, silently. |
+| `scope` | It compares against ids that are always UUIDs, never a vendor name, so a scoped guardrail matches nothing, forever, silently. |
 | Numeric conditions | Token counts and durations are all zero *before* a command runs. "Greater than" can never fire; "less than" fires on everything. |
 | A command matcher and a file matcher in one condition | No real command carries both, so the condition can never be true. Split it into two under `any_of`. |
 
@@ -393,7 +393,7 @@ command through.
 
 One more is caught in CI rather than by the shape check, because it cannot be caught earlier: **a
 single-item brace list in a tool name.** `"{Bash}"` is a glob pattern, and it does not match `Bash`,
-so the rule matches nothing, forever, with no error anywhere. Write a single tool plainly as
+so the guardrail matches nothing, forever, with no error anywhere. Write a single tool plainly as
 `"Bash"`; braces are for real alternatives, `"{Bash,PowerShell}"`.
 
 ### Ready to open a pull request?
@@ -404,32 +404,32 @@ and report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## Stability and versioning
 
-Rule ids and pack names end up in people's config files, so they are treated as public API:
+Guardrail ids and pack names end up in people's config files, so they are treated as public API:
 
-- **A rule id never changes.** Renaming or removing a rule would silently undo an override
+- **A guardrail id never changes.** Renaming or removing a guardrail would silently undo an override
   someone set on it, so either one is a breaking change.
 - **A pack name never changes** either, for the same reason: a renamed pack silently
   re-enables a pack someone had turned off.
-- **A new rule or pack is a feature.** Guard turns every pack on unless you turned it off, so a
-  rule added in a release you install starts enforcing with no step of your own.
+- **A new guardrail or pack is a feature.** Guard turns every pack on unless you turned it off, so a
+  guardrail added in a release you install starts enforcing with no step of your own.
 
 Releases are cut automatically from [Conventional Commits](https://www.conventionalcommits.org/).
-Before 1.0, a breaking change ships as a minor release and a new rule as a patch release, so
+Before 1.0, a breaking change ships as a minor release and a new guardrail as a patch release, so
 skim the [changelog](CHANGELOG.md) before you upgrade.
 
 ## FAQ
 
-**Can I use these rules without Guard?** Yes. They are plain data under Apache-2.0. You need your
+**Can I use these guardrails without Guard?** Yes. They are plain data under Apache-2.0. You need your
 own matcher to apply them, because this package does not contain one.
 
-**A rule fires on something legitimate. What do I do?** In Guard, `agenttrail-guard guardrails
-allow <id> <pattern>` silences that one rule for that one command shape, without turning the rule
+**A guardrail fires on something legitimate. What do I do?** In Guard, `agenttrail-guard guardrails
+allow <id> <pattern>` silences that one guardrail for that one command shape, without turning the guardrail
 off. Then please [open an issue](https://github.com/agenttrailhq/guardrails/issues) with a
-sanitized example, so the rule can learn the near-miss.
+sanitized example, so the guardrail can learn the near-miss.
 
-**Why didn't a rule fire on my command?** Start with the rule's `description`: it lists what the
-rule misses. Then check [what these rules deliberately do not catch](#what-these-rules-deliberately-do-not-catch).
-To test a command against every rule, paste it into the [online checker](https://www.agenttrail.sh/guardrails#check).
+**Why didn't a guardrail fire on my command?** Start with the guardrail's `description`: it lists what the
+guardrail misses. Then check [what these guardrails deliberately do not catch](#what-these-guardrails-deliberately-do-not-catch).
+To test a command against every guardrail, paste it into the [online checker](https://www.agenttrail.sh/guardrails#check).
 
 **Why is `secret-exposure` mostly `warn`?** Reading a secret is a normal part of a normal day.
 Refusing every `.env` read would be turned off within a week. Moving a secret off the machine is
@@ -443,16 +443,19 @@ held for approval instead.
 ### Two ways to import it
 
 ```ts
-import { RULES, getRule } from "@agenttrail/guardrails/guardrails";  // just the rules
-import { parseRule } from "@agenttrail/guardrails";                  // rules + the shape checker
+import { RULES, getRule } from "@agenttrail/guardrails/guardrails";  // just the guardrails
+import { parseRule } from "@agenttrail/guardrails";                  // guardrails + the shape checker
 ```
 
-Use the first when you want to *apply* rules, and the second when you want to *validate* one you are
+The exports keep their original names (`RULES`, `getRule`, `parseRule`, `defineRule`, `Rule`); each
+entry is a guardrail.
+
+Use the first when you want to *apply* guardrails, and the second when you want to *validate* one you are
 writing.
 
 They are separate because the guard starts a fresh process on **every single command** an agent runs,
 under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 74
-rules that were already checked before release.
+guardrails that were already checked before release.
 
 ### Known limits of the carrier logic
 
@@ -470,38 +473,38 @@ In the same spirit as the rest of this file:
 
 ### MCP coverage
 
-A command rule fires on `Bash`, `PowerShell` *and* any `mcp__*` tool: the guard hands the checker an
-MCP call's serialized `tool_input` as the same command text every command rule reads, so a command
+A command guardrail fires on `Bash`, `PowerShell` *and* any `mcp__*` tool: the guard hands the checker an
+MCP call's serialized `tool_input` as the same command text every command guardrail reads, so a command
 shape run through an MCP server (`{"command":"rm -rf /"}`) is caught, not ignored. Two honest limits
 follow from that:
 
-1. **Start-anchored patterns may miss.** A rule whose pattern is anchored to the start of the command
+1. **Start-anchored patterns may miss.** A guardrail whose pattern is anchored to the start of the command
    (`^…` or a command-position class) may not fire inside the JSON, where the shape sits after a `"`
-   rather than at a command boundary; the `\b`-anchored rules (most of the corpus) do fire.
+   rather than at a command boundary; the `\b`-anchored guardrails (most of the corpus) do fire.
 2. **Mentions are not exempt.** The quoted-mention exemptions are shell-only, so an MCP payload that
    merely *names* a command in a text field (`{"title":"fix the rm -rf / bug"}`) is matched the same
    as one that runs it; a JSON blob cannot be told apart from a shell-running MCP server.
 
-File rules match by path on whichever file tool a client uses. No rule is shell-only by design; a
-rule that does not reach the MCP channel does so because its pattern, not its label, does not match
+File guardrails match by path on whichever file tool a client uses. No guardrail is shell-only by design; a
+guardrail that does not reach the MCP channel does so because its pattern, not its label, does not match
 the serialized shape.
 
-### Where these rules came from
+### Where these guardrails came from
 
 Independently authored. No block list, pattern or wording is copied from any other project.
 
-Where a rule's shape follows an obvious convention (an `rm -rf` pattern looks like an `rm -rf`
+Where a guardrail's shape follows an obvious convention (an `rm -rf` pattern looks like an `rm -rf`
 pattern), that is two people meeting the same shell, not one copying the other.
 
 ## Part of AgentTrail
 
-These rules are part of [AgentTrail](https://www.agenttrail.sh), which builds guardrails and
+This library is part of [AgentTrail](https://www.agenttrail.sh), which builds guardrails and
 observability for AI coding agents:
 
-- **[AgentTrail Guard](https://www.agenttrail.sh/agenttrail-guard)** enforces them on every
+- **[AgentTrail Guard](https://www.agenttrail.sh/agenttrail-guard)** enforces these guardrails on every
   tool call that reaches its hooks, on your machine. It is free, open source, and needs no
   account. Its code is in [agenttrailhq/guard](https://github.com/agenttrailhq/guard).
-- **[AgentTrail OS](https://www.agenttrail.sh/agenttrail-os)** uses the same open rule library,
+- **[AgentTrail OS](https://www.agenttrail.sh/agenttrail-os)** uses the same open guardrail library,
   and adds searchable session history and team workflows. See
   [AgentTrail Guard vs AgentTrail OS](https://www.agenttrail.sh/guard-vs-os).
 
@@ -509,7 +512,7 @@ observability for AI coding agents:
 
 Apache-2.0. See [LICENSE](./LICENSE).
 
-Rule ideas and reports go to [Guardrails issues](https://github.com/agenttrailhq/guardrails/issues).
-If you rely on these rules, a star helps other developers find them.
+Guardrail ideas and reports go to [Guardrails issues](https://github.com/agenttrailhq/guardrails/issues).
+If you rely on these guardrails, a star helps other developers find them.
 
 Made with ❤️ by [agenttrail.sh](https://www.agenttrail.sh)
