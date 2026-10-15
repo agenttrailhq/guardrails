@@ -1,9 +1,9 @@
 /**
- * The README's rule counts.
+ * The README's guardrail counts.
  *
  * The README states the corpus size and a per-pack count in the pack table, and
  * those numbers are the first thing a reader trusts. Nothing else ties them to the
- * code, so adding or removing a rule without touching the README would leave it
+ * code, so adding or removing a guardrail without touching the README would leave it
  * quietly wrong. This test makes that a red build instead.
  */
 
@@ -14,18 +14,20 @@ import { getRule, OWASP_IDS, PACKS, type Pack, RULES, RULES_BY_PACK } from "../s
 
 const README = readFileSync(fileURLToPath(new URL("../README.md", import.meta.url)), "utf8");
 
-describe("the README's rule counts", () => {
+describe("the README's guardrail counts", () => {
   it("states the total the corpus actually has", () => {
-    const stated = README.match(/\[(\d+) rules\]\(https:\/\/www\.agenttrail\.sh\/guardrails\)/);
+    const stated = README.match(
+      /\[(\d+) guardrails\]\(https:\/\/www\.agenttrail\.sh\/guardrails\)/,
+    );
     expect(stated?.[1]).toBe(String(RULES.length));
   });
 
   it("states the import section's total the corpus actually has", () => {
-    const stated = README.match(/re-check (\d+)\s+rules/);
+    const stated = README.match(/re-check (\d+)\s+guardrails/);
     expect(stated?.[1]).toBe(String(RULES.length));
   });
 
-  it("lists every pack in the pack table, with its real rule count", () => {
+  it("lists every pack in the pack table, with its real guardrail count", () => {
     const rows = [...README.matchAll(/^\| \[`([a-z-]+)`\]\(src\/packs\/[a-z-]+\/\) \| (\d+) \|/gm)];
     const table = Object.fromEntries(rows.map(([, pack, count]) => [pack, Number(count)]));
     const actual = Object.fromEntries(PACKS.map((pack) => [pack, RULES_BY_PACK[pack].length]));
@@ -63,7 +65,7 @@ describe("the README's OWASP table", () => {
     expect([...listed].sort()).toEqual([...PACKS].sort());
   });
 
-  it("gives each row exactly the ids its packs' rules carry", () => {
+  it("gives each row exactly the ids its packs' guardrails carry", () => {
     for (const row of owaspRows()) {
       const tagged = new Set(
         row.packs.flatMap((pack) => RULES_BY_PACK[pack].flatMap((r) => r.owasp ?? [])),
@@ -72,7 +74,7 @@ describe("the README's OWASP table", () => {
     }
   });
 
-  it("names a rule beside an id only when that rule carries the id", () => {
+  it("names a guardrail beside an id only when that guardrail carries the id", () => {
     const named = [...owaspSection().matchAll(/\b((?:ASI|LLM)\d{2})\b[^,|(]*\(`([^`]+)`\)/g)];
     expect(named.length).toBeGreaterThan(0);
     for (const [, id, ruleId] of named) {
@@ -80,9 +82,9 @@ describe("the README's OWASP table", () => {
     }
   });
 
-  it("splits the twenty ids into ones a rule cites and ones the README says no rule can address", () => {
+  it("splits the twenty ids into ones a guardrail cites and ones the README says no guardrail can address", () => {
     const cited = new Set(RULES.flatMap((rule) => rule.owasp ?? []));
-    const listStart = owaspSection().indexOf("What the rules cannot address");
+    const listStart = owaspSection().indexOf("What the guardrails cannot address");
     const notAddressed = new Set(idsIn(owaspSection().slice(listStart)));
     for (const id of notAddressed)
       expect(cited.has(id as (typeof OWASP_IDS)[number]), id).toBe(false);
