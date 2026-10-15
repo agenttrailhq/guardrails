@@ -8,7 +8,7 @@ import type { Rule } from "../../schema.js";
  * The two spellings are different commands sharing a name: `git checkout main`
  * moves HEAD and is the single most common git command there is, while
  * `git checkout -- .` overwrites the working tree from the index. Only the second
- * shape is matched, and the `allow` fixtures are the first shape, because a rule
+ * shape is matched, and the `allow` fixtures are the first shape, because a guardrail
  * that fires on every branch switch is uninstalled within the hour.
  */
 export const wtCheckoutDiscard: Rule = {

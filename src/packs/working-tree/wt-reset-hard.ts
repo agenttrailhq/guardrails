@@ -3,7 +3,7 @@ import { bash, mcp, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /**
- * The pack's lead rule, and the guard's canonical example.
+ * The pack's lead guardrail, and the guard's canonical example.
  *
  * `label` is `{Bash,PowerShell}` and not `Bash`: on Windows without Git Bash,
  * Claude Code does not register a `Bash` tool at all, so a Bash-only arm is inert

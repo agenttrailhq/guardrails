@@ -4,12 +4,12 @@ import type { Rule } from "../../schema.js";
 /**
  * Writing outside the project, in the only sense the guard can express.
  *
- * The obvious rule — "the agent wrote outside the project" — CANNOT BE WRITTEN.
+ * The obvious guardrail — "the agent wrote outside the project" — CANNOT BE WRITTEN.
  * `MappedCall.args` carries exactly `full_command` and `file_path`, and the
  * `PreToolUse` payload carries exactly `tool_name` and `tool_input`: there is no
  * cwd and no project root anywhere in what the guard sees, so "outside the
  * project" has nothing to compare against and would match everything or nothing.
- * This rule is therefore bounded to well-known ABSOLUTE paths, permanently, and
+ * This guardrail is therefore bounded to well-known ABSOLUTE paths, permanently, and
  * says so in its own description.
  */
 export const fsSystemPaths: Rule = {

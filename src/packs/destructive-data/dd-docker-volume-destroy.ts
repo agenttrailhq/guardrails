@@ -4,7 +4,7 @@ import type { Rule } from "../../schema.js";
 
 /**
  * `docker compose down -v` is one character away from `docker compose down`, and
- * the character deletes the database. That is the entire reason this rule exists,
+ * the character deletes the database. That is the entire reason this guardrail exists,
  * and it is why the neighboring command without `-v` is the `allow` fixture.
  */
 export const ddDockerVolumeDestroy: Rule = {

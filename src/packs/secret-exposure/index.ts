@@ -1,16 +1,16 @@
 /**
  * Pack: `secret-exposure` — Credentials and sensitive data leaving where they live.
  *
- * The pack's largest, at ten rules, and the one whose actions are mostly `warn`.
+ * The pack's largest, at ten guardrails, and the one whose actions are mostly `warn`.
  * That is deliberate: reading a secret is a normal part of a normal day, and a
  * pack that holds every one of them is a pack a team disables on day two. Only
- * the two rules about data actually LEAVING — `se.secret-egress` and
- * `se.public-acl` — hold, along with the credential-file and endpoint rules.
+ * the two guardrails about data actually LEAVING — `se.secret-egress` and
+ * `se.public-acl` — hold, along with the credential-file and endpoint guardrails.
  *
- * Four rules are filed here BY HARM rather than by matcher:
+ * Four guardrails are filed here BY HARM rather than by matcher:
  * `block-hardcoded-secrets` (credential material in a command),
  * `block-env-file-read` and `require-auth-on-pii-endpoints` (both `file_glob`
- * rules, filed by what they protect rather than by the fact that they match a
+ * guardrails, filed by what they protect rather than by the fact that they match a
  * path), and `warn-op-read-secret`.
  */
 
@@ -26,7 +26,7 @@ import { seSecretManagerRead } from "./se-secret-manager-read.js";
 import { seTokenPrint } from "./se-token-print.js";
 import { warnOpReadSecret } from "./warn-op-read-secret.js";
 
-/** Rules in this pack. */
+/** Guardrails in this pack. */
 export const rules: readonly Rule[] = [
   seSecretManagerRead,
   seEnvPrint,

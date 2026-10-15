@@ -3,11 +3,11 @@
  *
  * The five shapes: pipe it into a shell, substitute it into one, run it straight
  * from a URL, fetch it from a registry somebody redirected, or fetch it over a
- * connection whose certificate is not checked. Every rule here holds rather than
+ * connection whose certificate is not checked. Every guardrail here holds rather than
  * blocks, because every one of them is also how legitimate software gets
  * installed.
  *
- * Six rules, including `block-curl-pipe-to-shell` — executing an unreviewed
+ * Six guardrails, including `block-curl-pipe-to-shell` — executing an unreviewed
  * remote script is the pack's subject.
  */
 
@@ -19,7 +19,7 @@ import { rceRemoteRunner } from "./rce-remote-runner.js";
 import { rceTlsVerifyOff } from "./rce-tls-verify-off.js";
 import { rceUnverifiedPackage } from "./rce-unverified-package.js";
 
-/** Rules in this pack. */
+/** Guardrails in this pack. */
 export const rules: readonly Rule[] = [
   rceEvalDynamic,
   rceRemoteRunner,

@@ -1,6 +1,6 @@
 // cspell:words exfiltration
 /**
- * The corpus itself — rules only, and **deliberately free of zod**.
+ * The corpus itself — guardrails only, and **deliberately free of zod**.
  *
  * ── Why this is a separate entry point from `index.ts` ───────────────────────
  *
@@ -15,17 +15,17 @@
  * reference to `./schema.js`, which esbuild erases. Everyone else keeps using the
  * root and gets the schema with it.
  *
- * A cold import of the package root, validating every rule through `defineRule`,
+ * A cold import of the package root, validating every guardrail through `defineRule`,
  * takes about twice as long as an empty Node process. The subpath avoids that on
  * every tool call.
  *
  * ── Where validation runs ───────────────────────────────────────────────────
  *
- * At test time: `__tests__/corpus.test.ts` runs `parseRule()` over every rule and
+ * At test time: `__tests__/corpus.test.ts` runs `parseRule()` over every guardrail and
  * fails on any invalid one, and proves that sweep bites with a deliberately
- * malformed rule. `defineRule` is exported for contributors authoring locally.
+ * malformed guardrail. `defineRule` is exported for contributors authoring locally.
  *
- * So every rule file exports a plain object literal typed `satisfies Rule` with a
+ * So every guardrail file exports a plain object literal typed `satisfies Rule` with a
  * TYPE-only schema import. `corpus.test.ts` is what stops one from drifting.
  */
 
@@ -45,11 +45,11 @@ import type { Rule } from "./schema.js";
 
 export * from "./exemptions.js";
 export * from "./fixtures.js";
-/** The OWASP id lists a rule's `owasp` field cites. Plain data, so this entry stays zod-free. */
+/** The OWASP id lists a guardrail's `owasp` field cites. Plain data, so this entry stays zod-free. */
 export * from "./owasp.js";
 export * from "./packs.js";
 /**
- * The rule TYPES, re-exported so a consumer of this subpath does not have to
+ * The guardrail TYPES, re-exported so a consumer of this subpath does not have to
  * reach for the package root (and its validator) just to name a `Rule`.
  *
  * `export type` is fully erased at build time — `dist/guardrails.js` carries no zod,
@@ -71,16 +71,16 @@ export type {
  *
  * It belongs on THIS entry rather than only on the root because it describes the
  * corpus, and because `stamp.ts` is two string constants with no imports: a
- * consumer that must stay zod-free can ask how old its rules are without reaching
+ * consumer that must stay zod-free can ask how old its guardrails are without reaching
  * for the validator. The root re-exports it too, via `export * from "./rules.js"`.
  */
 export * from "./stamp.js";
 
 /**
- * Every pack's rules, keyed by pack id.
+ * Every pack's guardrails, keyed by pack id.
  *
  * `Record<Pack, …>` is doing real work: adding a pack to `PACKS` without wiring
- * its rules here is a compile error, not a pack that silently ships empty.
+ * its guardrails here is a compile error, not a pack that silently ships empty.
  */
 export const RULES_BY_PACK: Record<Pack, readonly Rule[]> = {
   "working-tree": workingTree,
@@ -104,12 +104,12 @@ export const RULES_BY_PACK: Record<Pack, readonly Rule[]> = {
  */
 export const RULES: readonly Rule[] = PACKS.flatMap((pack) => RULES_BY_PACK[pack]);
 
-/** Look up one rule by id. `undefined` when nothing matches. */
+/** Look up one guardrail by id. `undefined` when nothing matches. */
 export function getRule(id: string): Rule | undefined {
   return RULES.find((rule) => rule.id === id);
 }
 
-/** Every rule in one pack, in authored order. */
+/** Every guardrail in one pack, in authored order. */
 export function rulesForPack(pack: Pack): readonly Rule[] {
   return RULES_BY_PACK[pack];
 }

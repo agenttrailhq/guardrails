@@ -6,7 +6,7 @@ import type { Rule } from "../../schema.js";
  * Skills, slash commands, sub-agents and output styles: named instructions an agent loads later.
  *
  * `fs.agent-self-config` deliberately leaves `.claude/commands/*.md` alone, because a command is a
- * prompt rather than a permission. This rule is where that prompt is held. Several tools load each
+ * prompt rather than a permission. This guardrail is where that prompt is held. Several tools load each
  * other's folders — Cursor reads `.claude/` and `.codex/` skills and agents, and Windsurf, Gemini
  * and Cline read `.agents/skills/` — so each glob protects more than one tool.
  */

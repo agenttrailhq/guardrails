@@ -6,7 +6,7 @@ import type { Rule } from "../../schema.js";
 /**
  * Opening an interactive shell to a remote host — the classic exfiltration/control primitive.
  *
- * The only rule in this pack that blocks. Every pattern names a mechanism whose sole purpose is to
+ * The only guardrail in this pack that blocks. Every pattern names a mechanism whose sole purpose is to
  * hand a shell to another machine; there is no ordinary reason for a coding agent to do this.
  */
 export const exReverseShell: Rule = {

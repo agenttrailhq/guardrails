@@ -7,7 +7,7 @@ import type { Rule } from "../../schema.js";
 /**
  * Dropping a database from the shell, rather than from inside SQL — which is
  * `block-destructive-sql`'s job. The two do not overlap: `dropdb myapp` contains
- * no `drop database` phrase and would sail past that rule entirely.
+ * no `drop database` phrase and would sail past that guardrail entirely.
  */
 export const ddDatabaseDrop: Rule = {
   id: "dd.database-drop",

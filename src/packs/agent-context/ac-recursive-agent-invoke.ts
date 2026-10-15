@@ -11,7 +11,7 @@ const ARGS = "\\s(?:[^|;&\"']*\\s)?";
 /**
  * An agent starting another agent to run a task without a human in the loop.
  *
- * Each spawned agent reads, writes and runs commands of its own, and can spawn more. No rule can
+ * Each spawned agent reads, writes and runs commands of its own, and can spawn more. No guardrail can
  * put a number on that — conditions on counts and durations are not available before a tool call
  * runs — so this holds the shape instead: a coding agent invoked non-interactively from a shell.
  */

@@ -3,16 +3,16 @@
  *
  * `FixtureSchema` accepts a bare string as shorthand for
  * `{ tool: "Bash", command: … }`, but that shorthand is a **zod transform**: it
- * only becomes the object form when a rule is PARSED. Rule files export plain
+ * only becomes the object form when a guardrail is PARSED. Guardrail files export plain
  * typed literals so that nothing on the guard's hot path reaches the validator
  * (see `rules.ts`), so there is no parse at load and therefore no transform —
- * a bare string in a rule file would be a bare string at runtime, and the
+ * a bare string in a guardrail file would be a bare string at runtime, and the
  * harness reads `"command" in fixture`.
  *
  * Writing every fixture out longhand would work and would be unreadable, so
  * these exist instead. They also make the CHANNEL visible at every single
  * fixture, and the channel is the thing
- * that silently makes a fixture vacuous — a `file_glob` rule handed a command
+ * that silently makes a fixture vacuous — a `file_glob` guardrail handed a command
  * fixture matches nothing, and an `allow` fixture that matches nothing passes.
  */
 
@@ -26,8 +26,8 @@ export function bash(command: string): Fixture {
 /**
  * A fixture on the command channel, from the `PowerShell` tool.
  *
- * Worth spelling out at least once per shell rule: on Windows without Git Bash,
- * Claude Code does not register `Bash` at all, so a rule proven only against
+ * Worth spelling out at least once per shell guardrail: on Windows without Git Bash,
+ * Claude Code does not register `Bash` at all, so a guardrail proven only against
  * `Bash` is proven on one platform.
  */
 export function pwsh(command: string): Fixture {
@@ -39,7 +39,7 @@ export function pwsh(command: string): Fixture {
  *
  * `tool` defaults to `Edit`. The guard's mapper routes `Edit`, `Write`, `Read`,
  * `MultiEdit`, `NotebookEdit`, `Grep` and `Glob` to this channel, and WHICH ONE a
- * fixture names is load-bearing: a file rule that names an operation in its id or
+ * fixture names is load-bearing: a file guardrail that names an operation in its id or
  * title excludes the read tools in its `none_of` (`{Read,Grep}`), so the same path
  * matches under `Edit` and does not match under `Read`. Naming the tool is
  * therefore part of the case a fixture proves, not documentation of it — an
@@ -58,7 +58,7 @@ export function file(filePath: string, tool = "Edit"): Fixture {
  * name; the widened `{Bash,PowerShell,mcp__*}` label matches any `mcp__*`.
  *
  * The point is to prove a command SHAPE carried by an MCP server still fires the
- * rule (`{ command: "rm -rf /" }`), and that a serialized MENTION is NOT exempted:
+ * guardrail (`{ command: "rm -rf /" }`), and that a serialized MENTION is NOT exempted:
  * the `none_of` carriers are anchored to the shell, and JSON does not start with a
  * carrier verb.
  */
@@ -109,9 +109,9 @@ export function mentionInPost(text: string): Fixture {
 
 /**
  * All four near misses for one payload: a commit message, a search, an echo and
- * an HTTP body. Spread into a rule's `allow` fixtures.
+ * an HTTP body. Spread into a guardrail's `allow` fixtures.
  *
- * A rule whose own trigger verb IS one of the carriers writes the other three
+ * A guardrail whose own trigger verb IS one of the carriers writes the other three
  * out longhand instead — see `exemptions.ts` for the five that do.
  */
 export function mentions(text: string): Fixture[] {

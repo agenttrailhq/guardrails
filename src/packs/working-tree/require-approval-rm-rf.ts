@@ -3,7 +3,7 @@ import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /**
- * The id has no dotted pack prefix. Rule ids are stable identifiers, so it is not
+ * The id has no dotted pack prefix. Guardrail ids are stable identifiers, so it is not
  * renamed to match the others.
  */
 export const requireApprovalRmRf: Rule = {

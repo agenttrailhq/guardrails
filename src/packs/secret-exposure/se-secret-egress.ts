@@ -11,7 +11,7 @@ import type { Rule } from "../../schema.js";
 
 /**
  * A credential file leaving the machine. This is the shape that turns a local
- * secret into a disclosed one, and it is the only rule in this pack that holds
+ * secret into a disclosed one, and it is the only guardrail in this pack that holds
  * rather than warns.
  *
  * Every arm requires BOTH a credential-shaped path and a transport in the same

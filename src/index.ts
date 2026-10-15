@@ -1,11 +1,11 @@
 /**
- * `@agenttrail/guardrails` — the rule corpus, its schema, and its fixtures.
+ * `@agenttrail/guardrails` — the guardrail corpus, its schema, and its fixtures.
  *
- * Rules only: no evaluator, and no dependency besides zod (see `schema.ts`).
+ * Guardrails only: no evaluator, and no dependency besides zod (see `schema.ts`).
  * `agenttrail-guard` bundles this catalog and evaluates it locally.
  *
- * 74 rules across eleven packs, each shipping at least one `block` fixture (must
- * match) and one `allow` fixture (must not match).
+ * Every guardrail sits in one of the eleven packs and ships at least one `block`
+ * fixture (must match) and one `allow` fixture (must not match).
  *
  * ── Two entry points, and the difference matters ─────────────────────────────
  *
