@@ -126,6 +126,7 @@ Here is a complete rule. Nothing is hidden; this is the actual shape.
   "defaultAction": "block",
   "title": "git reset --hard discards uncommitted work",
   "description": "Discards all uncommitted changes. Does not match `git restore` (see wt.restore-path).",
+  "owasp": ["ASI02", "LLM03"],
 
   // What to look for. This one matches a Bash command against a regular expression.
   "match": {
@@ -155,6 +156,7 @@ Reading the fields:
 | `severity` | How bad the thing being caught is: `critical`, `high`, `medium`, `low`, `info`. **It is not a price**: this package ships no mapping from severity to money. |
 | `defaultAction` | What should happen: `block` (refuse), `require_approval` (ask a human), or `warn` (allow, but say so). A user can override it. |
 | `description` | What the rule catches **and what it misses**. The honest limits are part of the rule, not a footnote. |
+| `owasp` | Optional. The [OWASP risks](#owasp-coverage) the rule addresses, as ids such as `ASI02` or `LLM06`, in list order. Every rule in this package has at least one. Versions up to and including 0.2.2 reject the field, so validate a rule that carries it with 0.2.3 or later. |
 | `match` | The condition. `any_of` means "any one of these is enough". |
 | `fixtures` | Examples that must match, and examples that must not. |
 
@@ -200,13 +202,18 @@ command or a file change.
 
 | Pack | Agentic risks | LLM risks | Default action |
 |---|---|---|---|
-| `working-tree`, `destructive-data`, `prod-infra`, `file-scope` | ASI02 Tool Misuse and Exploitation | LLM03 Excessive Agency | `block` or `require_approval` |
-| `rce-supply-chain` | ASI05 Unexpected Code Execution, ASI04 Agentic Supply Chain | LLM04 Supply Chain | `block` or `require_approval` |
-| `privilege-supply-chain` | ASI03 Identity and Privilege Abuse, ASI04 Agentic Supply Chain | LLM04 Supply Chain | `require_approval`, except `flag-dependency-install`, which is `warn` |
+| `working-tree`, `destructive-data`, `prod-infra`, `file-scope` | ASI02 Tool Misuse and Exploitation | LLM03 Excessive Agency, LLM10 Improper Output Handling (`block-destructive-sql`) | `block` or `require_approval` |
+| `rce-supply-chain` | ASI04 Agentic Supply Chain, ASI05 Unexpected Code Execution | LLM04 Supply Chain, LLM07 Misinformation (`rce.unverified-package`) | `block` or `require_approval` |
+| `privilege-supply-chain` | ASI03 Identity and Privilege Abuse, ASI04 Agentic Supply Chain | LLM03 Excessive Agency (`ps.iam-grant`), LLM04 Supply Chain, LLM07 Misinformation (`flag-dependency-install`) | `require_approval`, except `flag-dependency-install`, which is `warn` |
 | `secret-exposure`, `exfiltration` | ASI02 Tool Misuse and Exploitation, ASI03 Identity and Privilege Abuse | LLM02 Sensitive Information Disclosure | `secret-exposure` is mostly `warn`; `exfiltration` is `block` or `require_approval` |
 | `safety-bypass` | ASI09 Human-Agent Trust Exploitation | LLM10 Improper Output Handling (`gb.ansi-terminal-forgery`) | `require_approval`, except `gb.ansi-terminal-forgery`, which is `warn` |
-| `agent-context` | ASI06 Memory and Context Poisoning (the write, not its contents), ASI10 Rogue Agents | LLM03 Excessive Agency | `require_approval` |
+| `agent-context` | ASI03 Identity and Privilege Abuse (`ac.agent-autonomy-flag`), ASI04 Agentic Supply Chain (`ac.mcp-server-add`), ASI06 Memory and Context Poisoning (the write, not its contents), ASI10 Rogue Agents | LLM03 Excessive Agency | `require_approval` |
 | `test-integrity` | ASI10 Rogue Agents, ASI09 Human-Agent Trust Exploitation | | Mostly `warn`; deleting a test file or editing a test runner's configuration is `require_approval` |
+
+Each rule lists the ids it addresses in its own `owasp` field, so
+`RULES.filter((rule) => rule.owasp?.includes("ASI06"))` gives the rules behind one risk. Each row
+above is the union of its packs' ids, with the rule named where only one rule in the pack carries
+an id. A test keeps the table and the rules' ids equal.
 
 Read the default action before relying on a risk. A `warn` rule lets the action proceed and records
 it; only `require_approval` and `block` stop it. Reading a secret is a normal part of a normal day,

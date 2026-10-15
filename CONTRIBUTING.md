@@ -29,6 +29,10 @@ will not validate are all in the README:
 - [Every rule proves both directions](README.md#every-rule-proves-both-directions)
 - [Contributing a rule](README.md#contributing-a-rule)
 
+A rule may carry an optional `owasp` field: the ids of the OWASP risks it addresses, such as
+`["ASI02", "LLM03"]`. Versions up to and including 0.2.2 reject any key they do not know, so
+validate a rule that carries `owasp` with 0.2.3 or later, or with a guard built on it.
+
 Before writing a new rule, paste the command into the
 [online checker](https://www.agenttrail.sh/guardrails#check) to see whether a rule already
 catches it.
@@ -58,6 +62,8 @@ You are helping me add a rule to AgentTrail Guardrails, the repository in this d
 - [ ] The rule is filed in the pack for **the harm it prevents**, not the technique it uses.
 - [ ] Its `id` is final. Renaming it later breaks the configs that reference it.
 - [ ] Its `description` says what it catches **and what it misses**.
+- [ ] Its `owasp` field lists the OWASP risks it addresses (at least one, in list order), and
+      the README's [OWASP coverage](README.md#owasp-coverage) table still matches.
 - [ ] It has at least one `block` example and at least one `allow` example.
 - [ ] Each example is the right kind: a command for command rules, a file path for file rules.
 - [ ] It uses none of the rejected shapes: `scope`, numeric conditions, a command matcher and a
