@@ -1,3 +1,9 @@
+## [0.2.3](https://github.com/agenttrailhq/guardrails/compare/v0.2.2...v0.2.3) (2026-10-15)
+
+### Features
+
+* add optional OWASP ids to rules ([41e730f](https://github.com/agenttrailhq/guardrails/commit/41e730fd6fbe4d4ff818981043839d90c263a9d9))
+
 ## [0.2.2](https://github.com/agenttrailhq/guardrails/compare/v0.2.1...v0.2.2) (2026-10-06)
 
 ### Documentation
