@@ -499,7 +499,7 @@ export function parseRuleOrThrow(input: unknown): Rule {
       typeof input === "object" && input !== null && "id" in input
         ? String((input as { id: unknown }).id)
         : "<unknown id>";
-    throw new Error(`invalid guardrails rule ${id}: ${result.error.message}`);
+    throw new Error(`invalid guardrail ${id}: ${result.error.message}`);
   }
   return result.data;
 }
