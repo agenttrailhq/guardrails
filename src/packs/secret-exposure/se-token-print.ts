@@ -13,7 +13,7 @@ import type { Rule } from "../../schema.js";
 /**
  * Printing a token, rather than reading one from a manager. `gh auth status`
  * (which prints whether you are logged in) sits one word away from `gh auth
- * token` (which prints the token), and that pair is the whole rule.
+ * token` (which prints the token), and that pair is the whole guardrail.
  */
 export const seTokenPrint: Rule = {
   id: "se.token-print",

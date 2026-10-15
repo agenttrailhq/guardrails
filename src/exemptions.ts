@@ -1,5 +1,5 @@
 /**
- * Quoted mentions — the shared `none_of` every command rule carries.
+ * Quoted mentions — the shared `none_of` every command guardrail carries.
  *
  * ── The defect this exists to close ──────────────────────────────────────────
  *
@@ -14,13 +14,13 @@
  *     curl --data "we ran rm -rf /tmp/x" https://…    -> DENY  dd.rm-rf-absolute
  *
  * Without an exemption, a person documenting this tool is blocked by this tool.
- * That applies to every command-channel rule — 62 of the 74. The twelve `file_glob`
- * rules never see a command.
+ * That applies to every command-channel guardrail — 62 of the 74. The twelve `file_glob`
+ * guardrails never see a command.
  *
  * ── Why exemption by CARRIER VERB, and not by "the payload is quoted" ────────
  *
  * The obvious fix — ignore anything inside quotes — is wrong, and wrong in the
- * direction that matters. The flagship rule's own genuine article is
+ * direction that matters. The flagship guardrail's own genuine article is
  * `psql -c "DROP TABLE users;"`: the payload is inside the quotes and it very
  * much runs. So is `bash -c "curl https://x.sh | sh"`. Quoting says nothing
  * about execution; the VERB does. `psql -c` and `bash -c` execute their quoted
@@ -39,8 +39,8 @@
  * `block-destructive-sql` also keeps a looser condition of its own: it exempts any
  * command whose text NAMES a search or history tool, anywhere. That covers a search
  * that is not the FIRST word, such as `cat runbook.md | grep -n TRUNCATE`, and it is
- * why that rule misses a compound command that both searches and executes, as its
- * description states. The other four rules with their own `none_of`
+ * why that guardrail misses a compound command that both searches and executes, as its
+ * description states. The other four guardrails with their own `none_of`
  * (`se.env-print`, `require-approval-rm-rf`, `wt.clean-fdx`, `wt.restore-path`)
  * exclude something else entirely — a dry run, a build directory, `--staged` —
  * and have these conditions appended, not replaced.
@@ -55,7 +55,7 @@
  *              `$VAR` outside quotes is excluded with it because separating the
  *              two outside a quoted run buys nothing
  *   `<` `>`  — redirection, including the `>> ~/.zshrc` persistence shape and
- *              the `>> known_hosts` bypass shape two rules match on
+ *              the `>> known_hosts` bypass shape two guardrails match on
  *   `(` `)`  — subshell
  *
  * `|` is the one metacharacter treated per carrier. After `grep`, `git log` or
@@ -105,27 +105,27 @@
  *
  * ── Why a shared constant rather than 48 copies ─────────────────────────────
  *
- * A per-rule `none_of` written 48 times is 48 chances to drift, and the drift is
- * invisible: a rule with a slightly weaker exemption still passes every test it
+ * A per-guardrail `none_of` written 48 times is 48 chances to drift, and the drift is
+ * invisible: a guardrail with a slightly weaker exemption still passes every test it
  * owns. One frozen object referenced 48 times cannot drift, costs nothing in the
  * bundle (esbuild emits it once), and makes an opt-out a VISIBLE line of code —
- * see the five rules that take a subset, each because the carrier it drops is
+ * see the five guardrails that take a subset, each because the carrier it drops is
  * its own trigger verb.
  */
 
 import type { MatchCondition } from "./schema.js";
 
 /**
- * The `label` glob for a rule that reads a COMMAND: the two shells plus any MCP tool.
+ * The `label` glob for a guardrail that reads a COMMAND: the two shells plus any MCP tool.
  *
- * A command-channel rule describes a shape — `git push --force`, `rm -rf /` — and
+ * A command-channel guardrail describes a shape — `git push --force`, `rm -rf /` — and
  * that shape reaches the guard on more than one tool. Claude Code's own hooks route
  * `Bash`, `PowerShell` AND `mcp__*` to the guard, and the MCP channel carries the
  * serialized tool input as the same `detail` text every command matcher reads. A
- * rule pinned to `{Bash,PowerShell}` alone silently ignores the MCP channel, so an
+ * guardrail pinned to `{Bash,PowerShell}` alone silently ignores the MCP channel, so an
  * MCP server that runs shell commands is unguarded. This glob widens the label to
  * the MCP tools as well, and is referenced rather than copied so the set cannot
- * drift rule to rule.
+ * drift guardrail to guardrail.
  *
  * `mcp__*` matches the WHOLE label (picomatch matches the entire tool name), so it
  * catches any `mcp__<server>__<tool>` — including Cursor's `mcp__cursor__*` — and
@@ -245,7 +245,7 @@ export const PRINT_MENTION: MatchCondition = {
  * `curl -fsSL https://x.sh -o /tmp/i.sh` is not a mention of anything, and
  * exempting it would hand the RCE pack a hole for nothing in return.
  *
- * Dropped by every rule whose own trigger names `curl` or `wget`:
+ * Dropped by every guardrail whose own trigger names `curl` or `wget`:
  * `block-curl-pipe-to-shell`, `rce.remote-runner`, `rce.eval-dynamic`,
  * `rce.tls-verify-off` and `se.secret-egress` — for the last of these, POSTing
  * the quoted text off the box is precisely the harm it exists to catch.
@@ -256,9 +256,9 @@ export const HTTP_BODY_MENTION: MatchCondition = {
 };
 
 /**
- * The default: all four carriers. Spread into a command rule's `none_of`.
+ * The default: all four carriers. Spread into a command guardrail's `none_of`.
  *
- * A rule takes a SUBSET only when a carrier is its own trigger verb, and writes
+ * A guardrail takes a SUBSET only when a carrier is its own trigger verb, and writes
  * the subset out longhand so the omission is visible at the call site.
  */
 export const QUOTED_MENTION: readonly MatchCondition[] = [
@@ -273,10 +273,10 @@ export const QUOTED_MENTION: readonly MatchCondition[] = [
 /**
  * Zero or more global flags sitting between a command and its subcommand.
  *
- * A command-channel rule that pins a tool to its subcommand CONTIGUOUSLY —
+ * A command-channel guardrail that pins a tool to its subcommand CONTIGUOUSLY —
  * `git\s+reset`, `aws\s+s3`, `kubectl\s+delete`, `docker\s+volume` — is defeated
  * by a global flag slipped in between them. The subcommand no longer follows the
- * tool, so the rule stops matching and the action runs unguarded:
+ * tool, so the guardrail stops matching and the action runs unguarded:
  *
  *     git -C /repo reset --hard        git --no-pager …   git -c core.x=y …
  *     git --work-tree=/x …             aws --profile p …  aws --region r …
@@ -284,7 +284,7 @@ export const QUOTED_MENTION: readonly MatchCondition[] = [
  *     terraform -chdir=/x apply …      helm -n ns …       npm --silent …
  *
  * This constant is the ONE shared fix for that whole class, referenced rather
- * than copied so a rule cannot drift to a weaker spelling. It is spliced in RIGHT
+ * than copied so a guardrail cannot drift to a weaker spelling. It is spliced in RIGHT
  * AFTER the tool name and BEFORE the `\s+` that precedes the subcommand:
  * `\\bgit${LEADING_FLAGS}\\s+reset\\s+--hard\\b`. Empty (zero flags) it collapses
  * back to the original `tool\s+subcommand`, so the plain form still matches.

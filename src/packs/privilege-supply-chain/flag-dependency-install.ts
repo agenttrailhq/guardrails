@@ -4,7 +4,7 @@ import type { Rule } from "../../schema.js";
 
 /**
  * FILED BY HARM: a new third-party dependency is a supply-chain event. It
- * executes nothing remote by itself, so it is not an `rce-*` rule.
+ * executes nothing remote by itself, so it is not an `rce-*` guardrail.
  */
 export const flagDependencyInstall: Rule = {
   id: "flag-dependency-install",

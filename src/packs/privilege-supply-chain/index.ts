@@ -7,7 +7,7 @@
  * them changes what is possible afterwards, which is why the whole pack holds or
  * warns rather than blocks.
  *
- * Six rules, including `flag-dependency-install`.
+ * Six guardrails, including `flag-dependency-install`.
  */
 
 import type { Rule } from "../../schema.js";
@@ -18,7 +18,7 @@ import { psPersistence } from "./ps-persistence.js";
 import { psPublishArtifact } from "./ps-publish-artifact.js";
 import { psSudoWrite } from "./ps-sudo-write.js";
 
-/** Rules in this pack. */
+/** Guardrails in this pack. */
 export const rules: readonly Rule[] = [
   psSudoWrite,
   psPermissionWiden,

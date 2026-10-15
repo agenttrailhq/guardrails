@@ -5,7 +5,7 @@ import type { Rule } from "../../schema.js";
 /**
  * The deploy commands whose own text says production. Every one of them has a
  * preview or staging sibling that must stay quiet, and those siblings are the
- * `allow` fixtures — a rule that fires on every preview deploy is a rule that
+ * `allow` fixtures — a guardrail that fires on every preview deploy is a guardrail that
  * gets switched off before it ever sees a production one.
  */
 export const piDeployToProd: Rule = {

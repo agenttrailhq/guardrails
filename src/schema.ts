@@ -1,12 +1,12 @@
 /**
- * The guardrails rule format — self-contained, and deliberately so.
+ * The guardrail format — self-contained, and deliberately so.
  *
- * This file defines the rule format and imports nothing but zod and the OWASP id list
+ * This file defines the guardrail format and imports nothing but zod and the OWASP id list
  * (`./owasp.ts`, plain data), so the package builds on its own. The condition and match
  * shapes mirror the evaluator's rather than importing them; a change to either has to be
  * made in both places.
  *
- * A rule carries `defaultAction` (what the guard does when it matches) and no
+ * A guardrail carries `defaultAction` (what the guard does when it matches) and no
  * `version`; the package version is the corpus version.
  */
 
@@ -19,33 +19,33 @@ import { isOwaspId, type OwaspId, owaspIndex } from "./owasp.js";
  * The five severities, in order, most→least severe.
  *
  * `info` earns its place: seven of the eleven packs default to `ask`/`warn`, and a
- * warn-only rule labelled `low` overstates itself.
+ * warn-only guardrail labelled `low` overstates itself.
  *
  * Severity says how serious a match is. This package maps it to nothing else,
  * including cost: the guard prints no currency.
  */
 export const SEVERITIES = ["critical", "high", "medium", "low", "info"] as const;
 
-/** How dangerous the thing a rule catches is. An authoring signal, not a price. */
+/** How dangerous the thing a guardrail catches is. An authoring signal, not a price. */
 export const SeveritySchema = z.enum(SEVERITIES);
 
 // ── Actions ─────────────────────────────────────────────────────────────────
 
 /**
- * What the guard does when a rule matches.
+ * What the guard does when a guardrail matches.
  *
  * The guard maps these onto Claude Code's `PreToolUse` verdicts:
  * `block` → deny, `require_approval` → ask, `warn` → allow-but-recorded.
  */
 export const ACTIONS = ["block", "require_approval", "warn"] as const;
 
-/** The action a rule takes by default, before any user override. */
+/** The action a guardrail takes by default, before any user override. */
 export const ActionSchema = z.enum(ACTIONS);
 
 // ── detail_matches: regex limits, mirrored from the engine ───────────────────
 
 /**
- * Longest accepted `detail_matches` pattern. Long enough for any real rule; raised
+ * Longest accepted `detail_matches` pattern. Long enough for any real guardrail; raised
  * from 200 to fit the compound-command quoted-mention exemption, whose longest arm
  * (a carrier wrapped in a bounded chain of read-only surrounding segments) is ~300.
  * Kept in lockstep with the engine's own copy of this limit.
@@ -67,7 +67,7 @@ export const DETAIL_MATCHES_MAX_PATTERNS = 10;
  *
  * The guard's hook has a 10s Claude Code timeout, no internal watchdog, and it
  * **fails open**: a pattern that backtracks does not merely make enforcement slow,
- * it lets the action through. A slow rule in the guard is a disabled rule.
+ * it lets the action through. A slow guardrail in the guard is a disabled guardrail.
  *
  * HONEST LIMIT: this is a bound, not a proof. Star height 1 can still be
  * quadratic (`(a|a)*`), which is slow but not exponential, and is acceptable
@@ -182,7 +182,7 @@ const DetailMatchPatternSchema = z
  *   list that rots. A plain label has no glob character and matches exactly.
  * - `detail_contains`: optional. Substrings that must ALL appear (AND).
  *   **CASE-SENSITIVE**, and deliberately: `AKIA`, `ghp_`, `sk_live_` and the
- *   upper-case `TRUNCATE` arm are rules where case IS the signal. Author
+ *   upper-case `TRUNCATE` arm are guardrails where case IS the signal. Author
  *   case-insensitive text matches with `detail_matches` instead.
  * - `detail_matches`: optional. Regex patterns against the same text; at least
  *   one must match (OR, unlike `detail_contains`). Case-insensitive.
@@ -192,13 +192,13 @@ const DetailMatchPatternSchema = z
  *
  * `numeric` is BANNED. At guard decision time `tokens`,
  * `cachedTokens` and `durationMs` are all 0, because the action has not run yet.
- * `gt` is therefore always false — the rule can never fire — and, worse, **`lt`
- * is always true, so the rule fires on every single command.** Omitting the key
+ * `gt` is therefore always false — the guardrail can never fire — and, worse, **`lt`
+ * is always true, so the guardrail fires on every single command.** Omitting the key
  * from a `.strict()` object makes that a parse error rather than a lint finding.
  *
- * `scope` is BANNED for the same class of reason and is absent from the rule
+ * `scope` is BANNED for the same class of reason and is absent from the guardrail
  * envelope below: `agent_in` compares literally against an agent id that is
- * always a UUID, never the string `"claude-code"`, so a scoped rule matches
+ * always a UUID, never the string `"claude-code"`, so a scoped guardrail matches
  * nothing, forever, silently.
  *
  * ── The third ban needs an actual check ──────────────────────────────────────
@@ -257,7 +257,7 @@ export const MatchSchema = z
 
 /**
  * The tools a fixture may name. Free-form on purpose — the guard's matcher grows
- * (`mcp__*` alone is unbounded) and a closed enum here would reject a valid rule
+ * (`mcp__*` alone is unbounded) and a closed enum here would reject a valid guardrail
  * for a tool this package has not heard of yet.
  */
 const FixtureToolSchema = z.string().min(1);
@@ -276,10 +276,10 @@ const FileFixtureSchema = z
   .strict();
 
 /**
- * One fixture: a tool call this rule must match, or must not.
+ * One fixture: a tool call this guardrail must match, or must not.
  *
  * A bare string is shorthand for `{ tool: "Bash", command: "<string>" }`, which
- * covers most rules and keeps them terse. Anything else is an object with a
+ * covers most guardrails and keeps them terse. Anything else is an object with a
  * `tool` plus **exactly one** of `command` or `file_path` — the two channels.
  * `.strict()` on each variant is what makes "exactly one" true: a
  * `command` object carrying a `file_path` matches neither variant.
@@ -291,9 +291,9 @@ const FileFixtureSchema = z
  *
  * **The evaluator cannot see a URL**: the only two attribute keys any matcher
  * reads are `detail` and `file_path`, and there is no `url` field in the condition
- * schema. A value written to `url` would be read by nothing, so a `WebFetch` rule
+ * schema. A value written to `url` would be read by nothing, so a `WebFetch` guardrail
  * would match nothing, silently — the same failure `scope` is banned for. There
- * are no website rules and `WebFetch` is not intercepted; `WebSearch` is, because
+ * are no website guardrails and `WebFetch` is not intercepted; `WebSearch` is, because
  * its query is text on the command channel.
  *
  * A `url` key therefore fails to parse rather than becoming a fixture that tests
@@ -309,15 +309,15 @@ export const FixtureSchema = z.union([
 ]);
 
 /**
- * The two directions every rule must prove, through the real evaluator.
+ * The two directions every guardrail must prove, through the real evaluator.
  *
- * **`block` means "this rule MUST match"; `allow` means "this rule MUST NOT
+ * **`block` means "this guardrail MUST match"; `allow` means "this guardrail MUST NOT
  * match".** They are not verdicts. Seven of the eleven packs default to `ask` or
  * `warn`, and `warn` folds into an allow verdict, so reading `block` as "the
- * guard denies" would fail every `warn` rule and make the negative fixture
+ * guard denies" would fail every `warn` guardrail and make the negative fixture
  * vacuous for them.
  *
- * Both are `.min(1)`: CI only has to fail on a rule missing a
+ * Both are `.min(1)`: CI only has to fail on a guardrail missing a
  * negative fixture, but requiring it here moves that failure to authoring time,
  * where it costs a keystroke instead of a pull-request round trip.
  */
@@ -349,12 +349,12 @@ function unknownOwaspIdMessage(value: unknown): string {
 }
 
 /**
- * The OWASP risks a rule addresses, e.g. `["ASI02", "LLM03"]`.
+ * The OWASP risks a guardrail addresses, e.g. `["ASI02", "LLM03"]`.
  *
  * - Every entry is one of `OWASP_IDS`, spelled exactly: upper-case, no `:2026` suffix.
  * - No id twice, and the list is in `OWASP_IDS` order (ASI ids before LLM ids, each ascending),
- *   so a rule's ids have one spelling and a diff of them is a diff of meaning.
- * - Not empty. A rule that cites no risk omits the field.
+ *   so a guardrail's ids have one spelling and a diff of them is a diff of meaning.
+ * - Not empty. A guardrail that cites no risk omits the field.
  *
  * The parsed type is `OwaspId[]`, so a typo is a compile error for a TypeScript author too.
  * Each problem is reported at the entry it concerns (`owasp.<i>`), or at `owasp` for order and
@@ -406,32 +406,32 @@ export const OwaspIdsSchema = z
 // `RuleInput["owasp"]` `unknown[]`, so a typo in `defineRule({ owasp: [...] })` would compile and
 // only fail at load. The runtime checks above are unchanged and still run on any input.
 
-// ── The rule ────────────────────────────────────────────────────────────────
+// ── The guardrail ───────────────────────────────────────────────────────────
 
 /**
- * One published rule.
+ * One published guardrail.
  *
  * `.strict()` rejects any key not declared here, so an unknown field fails to parse
  * rather than riding along into the published package.
  *
- * `description` carries the rule's COVERAGE LIMITS, verbatim — e.g. that an
- * `rm -rf` rule misses `rm -fr`. It is a convention rather than a schema
+ * `description` carries the guardrail's COVERAGE LIMITS, verbatim — e.g. that an
+ * `rm -rf` guardrail misses `rm -fr`. It is a convention rather than a schema
  * constraint, because no validator can tell a real limit from a sentence shaped
  * like one.
  */
 export const RuleSchema = z
   .object({
-    /** Stable: a rule id is never renamed. */
+    /** Stable: a guardrail id is never renamed. */
     id: z.string().min(1),
-    /** The pack this rule belongs to. Validated against `PACKS` by the registry. */
+    /** The pack this guardrail belongs to. Validated against `PACKS` by the registry. */
     category: z.string().min(1),
     severity: SeveritySchema,
     defaultAction: ActionSchema,
     title: z.string().min(1),
     description: z.string().min(1),
     /**
-     * The OWASP risks this rule addresses. Optional: a rule that cites none omits it. An id is
-     * never a claim that the rule covers the whole risk, only that it acts where the risk turns
+     * The OWASP risks this guardrail addresses. Optional: a guardrail that cites none omits it. An id is
+     * never a claim that the guardrail covers the whole risk, only that it acts where the risk turns
      * into a command or a file change.
      */
     owasp: OwaspIdsSchema.optional(),
@@ -460,25 +460,25 @@ export type FixtureInput = z.input<typeof FixtureSchema>;
 /** A fixture after parsing — always the tagged object form. */
 export type Fixture = z.output<typeof FixtureSchema>;
 
-/** The must-match / must-not-match pair every rule ships. */
+/** The must-match / must-not-match pair every guardrail ships. */
 export type Fixtures = z.infer<typeof FixturesSchema>;
 
-/** One published rule, as authored. */
+/** One published guardrail, as authored. */
 export type RuleInput = z.input<typeof RuleSchema>;
 
-/** One published rule, parsed and normalized. */
+/** One published guardrail, parsed and normalized. */
 export type Rule = z.output<typeof RuleSchema>;
 
 // ── Parsing ─────────────────────────────────────────────────────────────────
 
 /**
- * Validate a rule from unknown input.
+ * Validate a guardrail from unknown input.
  *
- * It answers "is this a well-formed rule?" — it does NOT answer "does this rule
+ * It answers "is this a well-formed guardrail?" — it does NOT answer "does this guardrail
  * actually fire on the command you think it does." That needs the evaluator, which
  * is not part of this package.
  *
- * @param input - Unknown input, e.g. parsed JSON or a rule module's default export.
+ * @param input - Unknown input, e.g. parsed JSON or a guardrail module's default export.
  * @returns A Zod SafeParseReturnType — check `.success` before reading `.data`.
  */
 export function parseRule(input: unknown): z.SafeParseReturnType<unknown, Rule> {
@@ -486,9 +486,9 @@ export function parseRule(input: unknown): z.SafeParseReturnType<unknown, Rule> 
 }
 
 /**
- * Parse a rule, or throw with the reason.
+ * Parse a guardrail, or throw with the reason.
  *
- * Used by rule modules themselves via {@link defineRule}, so an authoring
+ * Used by guardrail modules themselves via {@link defineRule}, so an authoring
  * mistake fails at import — which is to say, at test time — rather than
  * surviving into a corpus that only validates what it remembers to check.
  */
@@ -505,7 +505,7 @@ export function parseRuleOrThrow(input: unknown): Rule {
 }
 
 /**
- * Declare a rule. Validates at module load, so a malformed rule cannot reach the
+ * Declare a guardrail. Validates at module load, so a malformed guardrail cannot reach the
  * registry — the corpus is only as trustworthy as its weakest unvalidated entry.
  */
 export function defineRule(rule: RuleInput): Rule {

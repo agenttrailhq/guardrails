@@ -16,7 +16,7 @@ import type { Rule } from "../../schema.js";
  * everyone believes is running turns out not to be.
  *
  * `mvn -DskipTests package` is a REQUIRED negative here: it is exactly the command
- * a rule about "skipping checks" drifts into matching if nobody pins it.
+ * a guardrail about "skipping checks" drifts into matching if nobody pins it.
  */
 export const gbGitNoVerify: Rule = {
   id: "gb.git-no-verify",

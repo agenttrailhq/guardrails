@@ -32,8 +32,8 @@ export const blockHardcodedSecrets: Rule = {
       },
       { kind: "execute_tool", detail_contains: ["-----BEGIN ", "PRIVATE KEY"] },
     ],
-    // Only TWO of the four carriers are exempt here, and this is the one rule where
-    // that is true. For every other rule a carrier is inert — a commit message naming
+    // Only TWO of the four carriers are exempt here, and this is the one guardrail where
+    // that is true. For every other guardrail a carrier is inert — a commit message naming
     // `rm -rf /` deletes nothing. Here the carrier IS the exposure: a live key in a
     // commit message is written into history and pushed, and a live key in a POST
     // body has already left the machine. Searching for a key is how you find one to
@@ -46,7 +46,7 @@ export const blockHardcodedSecrets: Rule = {
       bash(`export AWS_ACCESS_KEY_ID=ASIA${"EXAMPLE".repeat(3).slice(0, 16)}`),
       bash(`export GH_TOKEN=ghp_${"EXAMPLE".repeat(6)}`),
       bash("ssh-add - <<< '-----BEGIN OPENSSH PRIVATE KEY-----'"),
-      // The carrier rule above, as fixtures. These two are `block` — MUST
+      // The carrier exemption above, as fixtures. These two are `block` — MUST
       // match — precisely because they are quoted mentions, which everywhere else
       // in this corpus means "leave it alone".
       mentionInCommit("export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE"),

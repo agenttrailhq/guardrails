@@ -2,7 +2,7 @@
 /**
  * The eleven packs, and the order they are presented in.
  *
- * These ids are authoritative and shared with the rules authored against them,
+ * These ids are authoritative and shared with the guardrails authored against them,
  * and with the guard's `config.json` `disabledPacks`. Renaming one of these is a
  * breaking change to a user's config file.
  *
@@ -10,8 +10,8 @@
  * documented coding-agent failure, with public incident reports across Claude
  * Code, Gemini CLI and Codex.
  *
- * Per-pack rule counts are deliberately NOT encoded here: a rule count asserted in
- * code becomes a reason to write a weak rule to hit a number.
+ * Per-pack guardrail counts are deliberately NOT encoded here: a guardrail count asserted in
+ * code becomes a reason to write a weak guardrail to hit a number.
  */
 export const PACKS = [
   "working-tree",
@@ -27,7 +27,7 @@ export const PACKS = [
   "exfiltration",
 ] as const;
 
-/** One of the eleven pack ids. A rule's `category` is always one of these. */
+/** One of the eleven pack ids. A guardrail's `category` is always one of these. */
 export type Pack = (typeof PACKS)[number];
 
 /** Is this string one of the eleven pack ids? */

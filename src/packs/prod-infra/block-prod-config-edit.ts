@@ -2,7 +2,7 @@ import { file } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /**
- * FILED BY HARM, not by matcher. It is a `file_glob` rule and `file-scope` is a
+ * FILED BY HARM, not by matcher. It is a `file_glob` guardrail and `file-scope` is a
  * pack, but what it protects is PRODUCTION, not a path — and a user who turned
  * off `file-scope` to stop path noise would otherwise silently lose their
  * production-config protection, which they never asked to turn off and would

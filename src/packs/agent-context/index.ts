@@ -15,10 +15,10 @@
  * The guard sees the resulting action, not the instruction that caused it. A prompt injection that
  * stays inside one conversation is invisible here; the durable version of it — a line written into
  * `CLAUDE.md`, a new skill, a memory entry, a newly added MCP server, an agent started with its
- * approvals switched off — is what these rules catch. File tools reach the guard with a path and no
- * content, so every file rule here matches a WELL-KNOWN path and cannot see what was written.
+ * approvals switched off — is what these guardrails catch. File tools reach the guard with a path and no
+ * content, so every file guardrail here matches a WELL-KNOWN path and cannot see what was written.
  *
- * Six rules: three match paths on the file channel and three match commands. `ac.mcp-server-add`
+ * Six guardrails: three match paths on the file channel and three match commands. `ac.mcp-server-add`
  * also holds Cursor's `.cursor/mcp.json` as a path, because Cursor has no command for adding a server.
  */
 
@@ -30,7 +30,7 @@ import { acMemoryStoreEdit } from "./ac-memory-store-edit.js";
 import { acRecursiveAgentInvoke } from "./ac-recursive-agent-invoke.js";
 import { acSkillInstall } from "./ac-skill-install.js";
 
-/** Rules in this pack. */
+/** Guardrails in this pack. */
 export const rules: readonly Rule[] = [
   acInstructionFileEdit,
   acMemoryStoreEdit,

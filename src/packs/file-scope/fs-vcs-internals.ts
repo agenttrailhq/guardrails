@@ -6,7 +6,7 @@ import type { Rule } from "../../schema.js";
  * Editing git's own bookkeeping rather than the files it tracks.
  *
  * Narrow on purpose: `.git/COMMIT_EDITMSG` and `.git/index` change constantly
- * during normal work, and a rule over all of `.git/**` would fire on ordinary
+ * during normal work, and a guardrail over all of `.git/**` would fire on ordinary
  * commits. What is listed here is the subset that changes BEHAVIOUR — the config,
  * the hooks, the refs, and HEAD.
  */

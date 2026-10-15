@@ -5,7 +5,7 @@
  * documented coding-agent failure, with public incident reports across Claude
  * Code, Gemini CLI and Codex.
  *
- * Nine rules: the seven `wt.*` rules, plus two filed here BY HARM —
+ * Nine guardrails: the seven `wt.*` guardrails, plus two filed here BY HARM —
  * `block-force-push` destroys published history, and `require-approval-rm-rf` is
  * filesystem destruction against the tree, which is what this pack is about.
  */
@@ -21,7 +21,7 @@ import { wtResetMerge } from "./wt-reset-merge.js";
 import { wtRestorePath } from "./wt-restore-path.js";
 import { wtStashDrop } from "./wt-stash-drop.js";
 
-/** Rules in this pack. */
+/** Guardrails in this pack. */
 export const rules: readonly Rule[] = [
   wtResetHard,
   wtCheckoutDiscard,

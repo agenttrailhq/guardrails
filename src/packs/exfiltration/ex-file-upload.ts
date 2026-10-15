@@ -13,7 +13,7 @@ import type { Rule } from "../../schema.js";
  *
  * The tell is a file REFERENCE going outward: `curl`'s `@file` forms and `-T`, `wget --post-file`,
  * and an `scp`/`rsync` whose destination is a remote host. A plain quoted body is not a file and is
- * left alone — that distinction is the whole rule, because `curl --data "<prose>"` is everyday work.
+ * left alone — that distinction is the whole guardrail, because `curl --data "<prose>"` is everyday work.
  */
 export const exFileUpload: Rule = {
   id: "ex.file-upload",

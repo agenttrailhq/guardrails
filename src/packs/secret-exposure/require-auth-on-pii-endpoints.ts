@@ -5,10 +5,10 @@ import type { Rule } from "../../schema.js";
  * FILED BY HARM, and this is the one assignment worth flagging rather than
  * letting a reviewer discover. Its harm is sensitive data reaching the world,
  * which is this pack's subject — but the pack's NAME reads as credentials, and
- * this rule is about PII. It is also the only rule here whose finding is
+ * this guardrail is about PII. It is also the only guardrail here whose finding is
  * speculative: its own description concedes it cannot inspect the edit, so it is
  * a prompt to a reviewer rather than a detection. If `secret-exposure` is ever
- * read strictly as "credentials", this is the rule that moves.
+ * read strictly as "credentials", this is the guardrail that moves.
  */
 const SOURCE = "{ts,tsx,js,jsx,mjs,cjs,py,rb,go,php,java,cs,rs}";
 

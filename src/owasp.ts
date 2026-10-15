@@ -1,17 +1,17 @@
 /**
- * The two OWASP lists a rule's `owasp` field may cite, as plain data.
+ * The two OWASP lists a guardrail's `owasp` field may cite, as plain data.
  *
  * No zod here, so the corpus entry (`./rules.ts`) can re-export it and stay validator-free.
- * `schema.ts` validates a rule's `owasp` field against `OWASP_IDS`.
+ * `schema.ts` validates a guardrail's `owasp` field against `OWASP_IDS`.
  *
  * - OWASP Top 10 for Agentic Applications (v1.0, the 2026 edition): ASI01 to ASI10.
  * - OWASP Top 10 for LLM Applications 2026 (v1.0): LLM01 to LLM10.
  *
- * An id names the risk a rule addresses at the point where it becomes a command or a file
- * change. It is never a claim that the rule covers the whole risk.
+ * An id names the risk a guardrail addresses at the point where it becomes a command or a file
+ * change. It is never a claim that the guardrail covers the whole risk.
  */
 
-/** Every id a rule may cite, in list order: the agentic list first, then the LLM list. */
+/** Every id a guardrail may cite, in list order: the agentic list first, then the LLM list. */
 export const OWASP_IDS = [
   "ASI01",
   "ASI02",
@@ -83,7 +83,7 @@ export function isOwaspId(value: unknown): value is OwaspId {
   return typeof value === "string" && (OWASP_IDS as readonly string[]).includes(value);
 }
 
-/** The id's position in `OWASP_IDS`, or -1. The order a rule must list its ids in. */
+/** The id's position in `OWASP_IDS`, or -1. The order a guardrail must list its ids in. */
 export function owaspIndex(id: string): number {
   return (OWASP_IDS as readonly string[]).indexOf(id);
 }

@@ -4,8 +4,8 @@ import type { Rule } from "../../schema.js";
 
 /**
  * Merging past branch protection, or removing the protection itself. This is the
- * rule that protects the review process rather than the code — and the review
- * process is the only reason any of the other rules get looked at.
+ * guardrail that protects the review process rather than the code — and the review
+ * process is the only reason any of the other guardrails get looked at.
  */
 export const gbAdminMerge: Rule = {
   id: "gb.admin-merge",

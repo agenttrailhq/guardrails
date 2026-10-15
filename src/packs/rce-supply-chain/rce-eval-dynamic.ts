@@ -14,7 +14,7 @@ import type { Rule } from "../../schema.js";
  * substitution spelling that `block-curl-pipe-to-shell` cannot see.
  *
  * Deliberately narrower than "any eval": `eval "$(direnv hook zsh)"` and
- * `eval "$(ssh-agent)"` are ordinary shell-init lines, and a rule that holds them
+ * `eval "$(ssh-agent)"` are ordinary shell-init lines, and a guardrail that holds them
  * would be uninstalled the first morning. Every arm therefore requires a
  * DOWNLOADER inside the substitution.
  */

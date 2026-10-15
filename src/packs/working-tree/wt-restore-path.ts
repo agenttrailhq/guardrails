@@ -6,7 +6,7 @@ import type { Rule } from "../../schema.js";
  * `git restore` is the modern spelling of the discard half of `git checkout`, and
  * it is the one a coding agent reaches for, because it is what the porcelain
  * suggests. The `--staged` form only unstages — the file on disk is untouched —
- * so it is excluded rather than matched, which is why this rule has a `none_of`.
+ * so it is excluded rather than matched, which is why this guardrail has a `none_of`.
  *
  * The exclusion has a stated hole: `git restore --staged --worktree <path>` does
  * discard, and is exempted here. Closing it needs a negative lookahead, and the

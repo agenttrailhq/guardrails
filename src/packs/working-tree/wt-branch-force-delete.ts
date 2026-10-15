@@ -5,10 +5,10 @@ import { bash, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /**
- * The one rule in this pack that MUST use `detail_contains`, because case is the
+ * The one guardrail in this pack that MUST use `detail_contains`, because case is the
  * entire signal: `-D` force-deletes an unmerged branch and `-d` refuses to. Under
  * `detail_matches` — which the engine compiles case-INSENSITIVELY — the two are
- * indistinguishable, and the rule would fire on the safe spelling a developer
+ * indistinguishable, and the guardrail would fire on the safe spelling a developer
  * types after every merge.
  *
  * `detail_contains` is AND-within-a-condition, so `["git branch", "-D"]` requires

@@ -4,7 +4,7 @@ import type { Rule } from "../../schema.js";
 
 /**
  * `sudo` used to WRITE, rather than to read or query. The distinction is the
- * whole rule: `sudo apt-get update` and `sudo systemctl status` are ordinary,
+ * whole guardrail: `sudo apt-get update` and `sudo systemctl status` are ordinary,
  * while `sudo tee /etc/hosts` and `sudo sh -c` change the machine.
  */
 export const psSudoWrite: Rule = {

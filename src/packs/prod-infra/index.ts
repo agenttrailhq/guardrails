@@ -9,7 +9,7 @@
  * pack matches the dangerous verb regardless of environment and holds it for
  * approval, which is why almost nothing here is `block`.
  *
- * Eight rules, including `block-prod-config-edit`, filed by harm rather than by
+ * Eight guardrails, including `block-prod-config-edit`, filed by harm rather than by
  * matcher.
  */
 
@@ -23,7 +23,7 @@ import { piProdNamespace } from "./pi-prod-namespace.js";
 import { piTerraformAutoApprove } from "./pi-terraform-auto-approve.js";
 import { piTerraformStateMutate } from "./pi-terraform-state-mutate.js";
 
-/** Rules in this pack. */
+/** Guardrails in this pack. */
 export const rules: readonly Rule[] = [
   piTerraformAutoApprove,
   piTerraformStateMutate,
