@@ -15,6 +15,7 @@ export const fsVcsInternals: Rule = {
   category: "file-scope",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "Editing git's internals directly",
   description:
     "Holds a file tool opening git's own bookkeeping — .git/config, .git/hooks/, .git/refs/, .git/HEAD, .git/info/exclude — where a change alters what future git commands do rather than what the repository contains. Deliberately NARROW: all of .git/** would include COMMIT_EDITMSG and the index, which change during every ordinary commit, so the rule would fire constantly and be switched off. Reading is excluded — the Read and Grep tools never match — so opening .git/config to read it is not held; every other file tool is, including one this corpus does not know. It does NOT match .gitignore, .gitattributes or anything under .github/, which are tracked project files.",

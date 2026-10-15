@@ -6,6 +6,7 @@ export const blockEnvFileRead: Rule = {
   category: "secret-exposure",
   severity: "high",
   defaultAction: "warn",
+  owasp: ["ASI02", "ASI03", "LLM02"],
   title: "Flag reading a .env file",
   description:
     "Warns when a file tool READS a dotenv file — the `Read` and `Grep` tools — at both the `.env*` spelling at any depth and the `<name>.env` spelling (production.env, secrets.env). A WRITE is deliberately NOT flagged (`Edit`, `Write`, `MultiEdit`, `NotebookEdit`, and Cursor's `Delete`), because creating or editing config is ordinary work and the exposure this catches is an agent reading an existing secret, so the id names the read. A committed placeholder is NOT flagged either (.env.example, .env.sample, .env.template), because warning on a file that holds no secret teaches the reader to ignore the warning. Matches file-tool access by path: reading a .env through a shell command such as `cat .env` is a command span and is covered by se.env-print instead. It also cannot tell whether the file actually contains a secret.",

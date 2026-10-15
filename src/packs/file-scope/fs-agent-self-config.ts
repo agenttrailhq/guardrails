@@ -14,6 +14,7 @@ export const fsAgentSelfConfig: Rule = {
   category: "file-scope",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "The agent editing its own configuration",
   description:
     "Holds a file tool opening the files that define what the agent itself is allowed to do — Claude Code settings and hooks, an MCP server list, a plugin manifest, Cursor rules, a Codex config, and the guard's own config.json and guardrails.json. An agent that can edit these can widen its own reach with nobody reviewing the change. Reading is excluded — the `Read` and `Grep` tools never match — so opening one of these files to read it is not held; every other file tool is, including one this corpus does not know. Does NOT match ordinary project files, or `.claude/commands/*.md`, which are prompts rather than permissions. Bounded to WELL-KNOWN paths: no working directory or project root reaches the guard, so it can only match names it already knows.",

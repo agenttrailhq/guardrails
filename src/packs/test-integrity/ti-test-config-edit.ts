@@ -14,6 +14,7 @@ export const tiTestConfigEdit: Rule = {
   category: "test-integrity",
   severity: "medium",
   defaultAction: "require_approval",
+  owasp: ["ASI09", "ASI10"],
   title: "Editing a test runner or coverage configuration",
   description:
     "Holds a file tool opening a test runner's or coverage tool's own configuration: Jest's `jest.config.*`, Vitest's `vitest.config.*` and legacy `vitest.workspace.*`, `pytest.ini`, `pytest.toml` and their dotted forms, `tox.ini`, Mocha's `.mocharc.*`, PHPUnit's `phpunit.xml`, `phpunit.xml.dist` and `phpunit.dist.xml`, `codecov.yml`, nyc's `.nycrc*` and `nyc.config.*`, `.c8rc`, coverage.py's `.coveragerc`, `karma.conf.*`, and the Playwright and Cypress configs. One line in any of these can exclude a failing file, lower a coverage threshold or retry a flaky test until it passes. Reading is excluded — the `Read` and `Grep` tools never match — so opening one of these configs to read it is not held; every other file tool is, including one this corpus does not know. File tools carry a path and no content, so it still cannot tell a harmless edit from a weakening one. Deliberately NOT matched: general files that can also hold test settings — `pyproject.toml`, `setup.cfg`, `package.json`, `vite.config.*` — and test files themselves, since editing a test is how a test gets fixed. Misses test settings kept in those general files, and a config at a path passed with `--config`.",

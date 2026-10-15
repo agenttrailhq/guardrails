@@ -20,6 +20,7 @@ export const acAgentAutonomyFlag: Rule = {
   category: "agent-context",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI03", "ASI10", "LLM03"],
   title: "Switching off an agent's approvals or sandbox",
   description:
     "Holds the flags that make a coding agent act without asking: Claude Code's `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions` and `--permission-mode bypassPermissions`; Codex's `--dangerously-bypass-approvals-and-sandbox`, `--yolo`, `--full-auto`, `-a never` or `--ask-for-approval never`, `--sandbox danger-full-access`, and the same two settings passed as `approval_policy` or `sandbox_mode` config values; Gemini's `--yolo`, `-y` and `--approval-mode yolo`; `cursor-agent --force`, `-f` or `--yolo`; and Aider's `--yes-always`, its accepted short form `--yes`, and `AIDER_YES_ALWAYS`. Deliberately NOT matched: the narrower modes (`--permission-mode plan` or `acceptEdits`, `--sandbox workspace-write`, `-a on-request`, `--approval-mode auto_edit`), and `--auto-approve` or `-y` on any other command — `terraform apply --auto-approve` and `apt-get install -y` are not agents. Misses Cursor's CLI under its primary name `agent`, which is too generic to match on, and a setting written to an agent's config file with a file tool, which `fs.agent-self-config` holds for Claude Code and Codex. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone, as long as every shell metacharacter stays inside the quotes.",

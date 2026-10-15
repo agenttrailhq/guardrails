@@ -17,6 +17,7 @@ export const requireAuthOnPiiEndpoints: Rule = {
   category: "secret-exposure",
   severity: "medium",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "ASI03", "LLM02"],
   title: "Review API endpoint changes for auth",
   description:
     "Routes edits to API route/handler SOURCE files to human approval so a reviewer can confirm authentication is present on new or changed endpoints. Matched by path: a source file under routes/, handlers/ or controllers/; an api/ directory nested inside a source tree (src/api/, app/api/, pages/api/); Next's route.ts convention; and the <name>.controller.* / <name>.routes.* spellings. Reading is excluded — the Read and Grep tools never match — so opening an endpoint's source to read it does not ask for approval; every other file tool does, including one this corpus does not know. HEURISTIC: a path signal only — it cannot inspect the edit for a missing auth check or exposed PII, so treat a match as confirm auth on this endpoint, not as a finding. It deliberately does NOT match every file in a package merely NAMED api, nor a client-side router table such as routes.tsx, which defines no endpoint; and it MISSES endpoints declared inline in a server file or by a framework convention not listed above.",

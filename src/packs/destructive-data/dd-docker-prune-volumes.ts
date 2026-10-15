@@ -12,6 +12,7 @@ export const ddDockerPruneVolumes: Rule = {
   category: "destructive-data",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "Docker prune with volumes deletes unused data",
   description:
     'Prunes Docker volumes, deleting the data of every project whose containers are not currently running — on a developer laptop that is usually several other repositories\' databases. Routine housekeeping is deliberately NOT matched: `docker system prune -f` without `--volumes`, `docker image prune` and `docker builder prune` all pass. It cannot tell a volume you meant to discard from one you forgot was there. Global flags between `docker` and its subcommand are tolerated (`docker --context <name> system prune --volumes`, `-H <host>`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

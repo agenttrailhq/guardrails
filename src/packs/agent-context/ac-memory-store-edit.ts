@@ -13,6 +13,7 @@ export const acMemoryStoreEdit: Rule = {
   category: "agent-context",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI06", "LLM03"],
   title: "The agent editing its own memory",
   description:
     "Holds a file tool opening the memory a coding agent carries between sessions: Claude Code's auto memory under `.claude/projects/<project>/memory/`, and its sub-agent memory in `.claude/agent-memory/` and `.claude/agent-memory-local/`; Codex's `.codex/memories/`; Gemini's private `.gemini/tmp/<project>/memory/`; Windsurf's `.codeium/windsurf/memories/`, including `global_rules.md`; and `.cursor/memory/`. A false fact saved here is recalled as true in every later session. A `MEMORY.md` outside those directories deliberately does NOT match, and neither does a project's own `docs/memory/` folder: the name alone is not an agent's memory. Reading is excluded — the `Read` and `Grep` tools never match — so an agent recalling a memory by reading its file is not asked; every other file tool is, including one this corpus does not know. File tools carry a path and no content, so it still cannot see what was written. Misses a memory directory moved with Claude Code's `autoMemoryDirectory` setting, and Cursor memories kept anywhere other than `.cursor/memory/`, since Cursor does not document where it stores them. Gemini memories saved into `GEMINI.md` are held by `ac.instruction-file-edit` instead.",

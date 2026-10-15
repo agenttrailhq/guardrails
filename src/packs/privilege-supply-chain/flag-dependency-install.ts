@@ -11,6 +11,7 @@ export const flagDependencyInstall: Rule = {
   category: "privilege-supply-chain",
   severity: "low",
   defaultAction: "warn",
+  owasp: ["ASI04", "LLM04", "LLM07"],
   title: "Flag new dependency installs",
   description:
     'Surfaces a new third-party dependency being added — npm/pnpm/yarn/bun, pip/pipx/poetry/uv, gem, cargo, go get, composer, bundle, dotnet and mix. Non-blocking. Each form requires a PACKAGE ARGUMENT, so a lockfile restore that adds nothing — `npm ci`, `pnpm install`, `pnpm install --frozen-lockfile` — is deliberately not flagged. A global flag between the tool and its subcommand is tolerated (`npm --silent install pkg`, `pnpm -C apps/web add react`). MISSES a package named after more than one flag between the subcommand and the package, an install run through a wrapper, a dependency added by hand-editing a manifest, and the system package managers (apt, brew, apk), which install machine software rather than project dependencies. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

@@ -11,6 +11,7 @@ export const blockForcePush: Rule = {
   category: "working-tree",
   severity: "high",
   defaultAction: "block",
+  owasp: ["ASI02", "LLM03"],
   title: "Block git force-push",
   description:
     'Overwrites a remote branch\'s history, destroying commits other people may already have pulled. The command must contain `git push` and the force flag must sit in the same pipeline segment, so searching for the phrase is not blocked. A global flag between `git` and `push` is tolerated (`git -C <dir> push --force`, `git --no-pager push …`), and an absolute tool path such as `/usr/bin/git` still matches. The safer `--force-with-lease` form IS still blocked; exempting it needs a negative lookahead this corpus does not use. MISSES an alias such as `git pf`, and a force-push issued by a wrapper script whose own text does not say `git push`. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

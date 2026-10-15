@@ -14,6 +14,7 @@ export const psIamGrant: Rule = {
   category: "privilege-supply-chain",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI03", "LLM03"],
   title: "Granting permissions to an identity",
   description:
     'Holds a command that attaches a policy, creates an access key, adds an IAM binding or creates a Kubernetes role binding. Nothing breaks at the moment it runs — the consequence is what some other identity can do afterwards, which is exactly why a person should see it. The read verbs are deliberately NOT matched (`iam list-users`, `get-iam-policy`, `get clusterrolebindings`). It cannot judge whether the grant is narrow or wide, only that one is being made. Global flags between a cloud CLI or `kubectl` and its subcommand are tolerated (`aws --profile <p> iam …`, `kubectl --context <ctx> create …`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

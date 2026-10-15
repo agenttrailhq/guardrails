@@ -14,6 +14,7 @@ export const wtStashDrop: Rule = {
   category: "working-tree",
   severity: "medium",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "git stash drop / clear deletes stashed work",
   description:
     'Deletes stashed work, which has no undo — the stash commit becomes unreachable and there is no `git stash undrop`. Held for approval rather than blocked, because clearing an old stash is a normal deliberate act. Does NOT match `git stash pop` (which applies and then drops, and whose failure mode is a conflict rather than a loss) or `git stash push`. Global flags between `git` and `stash` are tolerated (`git -C <dir> stash drop`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

@@ -17,6 +17,7 @@ export const psPersistence: Rule = {
   category: "privilege-supply-chain",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI03"],
   title: "Arranging to run again after the session ends",
   description:
     'Holds a command that installs something which outlives the session — editing a crontab, loading a launch agent, creating a scheduled task, enabling a systemd unit, appending to a shell profile, or writing a Windows Run key. Reading the same things is deliberately NOT matched (`crontab -l`, `launchctl list`, `systemctl status`, `cat ~/.zshrc`). It cannot see WHAT is being scheduled, only that something is; and it MISSES persistence installed by writing a file with a file tool rather than by a shell command. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

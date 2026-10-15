@@ -23,6 +23,7 @@ export const tiSnapshotBlanketUpdate: Rule = {
   category: "test-integrity",
   severity: "medium",
   defaultAction: "warn",
+  owasp: ["ASI09"],
   title: "Overwriting every stored snapshot with current output",
   description:
     "Warns on a test run told to overwrite stored snapshots with whatever the code produces now: Jest's `-u` / `--updateSnapshot`, Vitest's `-u` / `--update`, Playwright's and Bun's `--update-snapshots`, the same flags passed through `npm test`, `pnpm test` or `yarn test`, pytest's `--snapshot-update` (syrupy and pytest-snapshot), `cargo insta accept`, `cargo insta test --accept`, and `INSTA_UPDATE=always`. A snapshot that no longer matches is a failing test, and accepting every difference at once makes it pass without anyone reading the diff. A warning, not a hold: regenerating snapshots after an intended change is ordinary work. Deliberately NOT matched: writing only NEW snapshots (`--update=new`, `--update-snapshots=missing`, `--snapshot-update-new-only`, `INSTA_UPDATE=new`), `cargo insta review`, and Jest's `--ci`. Misses a runner started through any other script name or wrapper, and snapshot files rewritten with a file tool. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",

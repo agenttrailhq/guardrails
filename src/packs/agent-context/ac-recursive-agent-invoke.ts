@@ -20,6 +20,7 @@ export const acRecursiveAgentInvoke: Rule = {
   category: "agent-context",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["LLM03"],
   title: "An agent starting another agent non-interactively",
   description:
     "Holds a coding agent started from a shell to run a task on its own: `claude -p` or `--print` (including through `npx @anthropic-ai/claude-code`), `codex exec` or `codex e`, `gemini -p` or `--prompt`, `cursor-agent -p` or `--print`, and `aider` run non-interactively with `--message`, `--msg`, `-m`, or `-f` — the short form of `--message-file`, which disables chat mode. `--message-file` needs no arm of its own: the `--message` arm is a prefix of it and catches it. Every spawned agent reads, writes and runs commands of its own and can start more, which is how spend and reach multiply without anyone watching. This catches the shape, not the cost: no rule can count calls or tokens before a tool runs. Deliberately NOT matched: `codex -p`, which selects a profile rather than a prompt, `--version` and `--help`, and listing commands such as `claude mcp list`. Misses Cursor's CLI when it is invoked by its primary name `agent`, which is too generic to match on, Gemini run headless by piping into it without `-p`, and a flag placed after a quoted argument. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone, as long as every shell metacharacter stays inside the quotes.",

@@ -15,6 +15,7 @@ export const piProdNamespace: Rule = {
   category: "prod-infra",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "A mutating kubectl command that names production",
   description:
     'A kubectl command that both MUTATES (delete, apply, scale, patch, replace, rollout, drain, exec, edit, set) and names a production namespace or context in its own text. Reads are deliberately NOT matched — `kubectl get pods -n production` and `kubectl logs -n production` are how you find out what is wrong. This is the only environment signal the guard has: no kubeconfig or current-context reaches it, so a mutating command against production that does not SAY production is invisible to this rule. The mutating verb and the production namespace or context may now appear in either order and after a global flag (`kubectl -n prod delete …`, `kubectl --context=prod-cluster apply …`), and an absolute tool path still matches; as a consequence a config write that names production (`kubectl config set-context … --namespace prod`) is also held, which is acceptable for a prompt rather than a block. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

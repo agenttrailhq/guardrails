@@ -17,6 +17,7 @@ export const wtResetHard: Rule = {
   category: "working-tree",
   severity: "high",
   defaultAction: "block",
+  owasp: ["ASI02", "LLM03"],
   title: "git reset --hard discards uncommitted work",
   description:
     'Discards every uncommitted change in the working tree, irrecoverably — there is no reflog for work that was never committed. Does NOT match `git restore` (see wt.restore-path), `git checkout -- .` (see wt.checkout-discard), or a reset spelled `--hard=...`; and it cannot tell a scratch clone from your only copy of the work, so a deliberate reset in a throwaway checkout is blocked too. A global flag between `git` and `reset` is tolerated (`git -C <dir> reset --hard`, `git --no-pager …`, `git -c k=v …`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

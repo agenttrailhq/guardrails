@@ -21,6 +21,7 @@ export const tiTestFileDelete: Rule = {
   category: "test-integrity",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI09", "ASI10"],
   title: "Deleting a test file or test directory",
   description:
     "Holds a command that deletes a test: `rm`, `unlink`, `git rm` or PowerShell's `Remove-Item` naming a file that follows a test runner's naming convention — `*.test.*`, `*.spec.*`, `*_test.go`, `*_test.py`, `test_*.py` — or a `__tests__/`, `test/`, `tests/` or `spec/` directory, or a file inside one. Deleting the failing test instead of fixing the code leaves a suite that still passes. Deliberately NOT matched: build, report and dependency output — anything under `dist/`, `build/`, `out/`, `coverage/` or `node_modules/`, and `test-results/`, `playwright-report/` and `.pytest_cache` — and moving or staging a test (`mv`, `git add`). Misses a test deleted with `find … -delete`, moved out of the tree, emptied or disabled with a file tool, and a test directory with any other name. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",

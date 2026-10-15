@@ -15,6 +15,7 @@ export const piKubectlDelete: Rule = {
   category: "prod-infra",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "kubectl delete / drain removes running workloads",
   description:
     'Deletes Kubernetes objects or drains a node, both of which stop running workloads. Held for approval rather than blocked because deleting a test deployment is routine. The guard CANNOT tell which cluster is selected — no kubeconfig, context or environment variable reaches it — so this fires the same way against a kind cluster and against production; pi.prod-namespace covers the case where the command itself names the environment. Does NOT match the read verbs (`get`, `describe`, `logs`) or `kubectl apply`. Global flags between `kubectl` and its verb are tolerated (`kubectl -n <ns> delete …`, `--context <ctx>`, `--kubeconfig <f>`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

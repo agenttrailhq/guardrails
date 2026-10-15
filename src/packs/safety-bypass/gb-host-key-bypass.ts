@@ -14,6 +14,7 @@ export const gbHostKeyBypass: Rule = {
   category: "safety-bypass",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI09"],
   title: "Accepting any SSH host key",
   description:
     'Holds `StrictHostKeyChecking=no`, a `UserKnownHostsFile` pointed at /dev/null, or a blind `ssh-keyscan` appended to known_hosts. Host-key checking exists to notice one thing — that the machine you reached is the machine you meant — and each of these is how it stops noticing. Does NOT match ordinary ssh, git-over-ssh or key generation. It cannot tell a CI runner (where this is sometimes the pragmatic answer) from a developer laptop, because no environment reaches the guard. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

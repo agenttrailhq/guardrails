@@ -11,6 +11,7 @@ export const fsCiDefinition: Rule = {
   category: "file-scope",
   severity: "medium",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "Editing the CI pipeline definition",
   description:
     "Holds a file tool opening a CI definition — GitHub Actions workflows and composite actions, .gitlab-ci.yml, a Jenkinsfile, CircleCI, Azure Pipelines, Buildkite or Bitbucket pipelines. This is where the checks that gate every merge are written down, and where a new step would run with the repository's secrets; both edits look like an ordinary diff. Reading is excluded — the Read and Grep tools never match — so opening a CI definition to read it is not held; every other file tool is, including one this corpus does not know. Does NOT match other files under .github/ (CODEOWNERS, issue templates), which gate nothing. It MISSES a CI system whose definition lives outside the repository.",

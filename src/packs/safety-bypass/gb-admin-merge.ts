@@ -12,6 +12,7 @@ export const gbAdminMerge: Rule = {
   category: "safety-bypass",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI09"],
   title: "Merging past branch protection, or deleting it",
   description:
     'Holds `gh pr merge --admin` (which merges without the required reviews or checks), a `gh api` call that deletes or replaces a branch-protection rule, and `gh ruleset delete`. Does NOT match an ordinary merge (`gh pr merge --squash`) or a READ of the protection settings, which is how you find out what is configured. It only sees the GitHub CLI: the same change made in the web UI, or through another client, is invisible to it. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

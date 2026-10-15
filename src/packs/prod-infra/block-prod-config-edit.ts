@@ -19,6 +19,7 @@ export const blockProdConfigEdit: Rule = {
   category: "prod-infra",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI02", "LLM03"],
   title: "Approve production config edits",
   description:
     "Routes edits to production configuration files to human approval. Matched by path: `*.prod.*` and `*.production.*`, the bare `prod.*` / `production.*` spellings, and any file under a `prod/` or `production/` directory. Reading is excluded — the `Read` and `Grep` tools never match — so opening a production config to look at it does not ask for approval; every other file tool does, including one this corpus does not know. Prose is excluded too — `.md`, `.mdx` and `.txt` never match — so writing a runbook under `docs/production/` does not ask for approval to change production. It matches the PATH only: it cannot tell a real production config from a file that merely spells prod in its name, and it MISSES a production config named something else entirely, such as `values-live.yaml`.",

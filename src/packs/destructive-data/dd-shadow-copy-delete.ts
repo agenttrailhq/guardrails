@@ -17,6 +17,7 @@ export const ddShadowCopyDelete: Rule = {
   category: "destructive-data",
   severity: "critical",
   defaultAction: "block",
+  owasp: ["ASI02", "LLM03"],
   title: "Deleting Windows shadow copies or recovery data",
   description:
     'Deletes Windows shadow copies, the backup catalog, or the recovery boot entry — the standard opening move of ransomware, because it removes the only local route back from an encrypted disk. There is no legitimate reason for a coding agent to run any of it. Does NOT match the read-only siblings (`vssadmin list shadows`, `wbadmin get status`, `bcdedit /enum`), which are reasonable while diagnosing a backup. Windows-only by nature; the equivalent on macOS (`tmutil delete`) is not covered. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',

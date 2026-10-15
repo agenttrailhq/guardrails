@@ -12,6 +12,7 @@ export const rceForeignRegistry: Rule = {
   category: "rce-supply-chain",
   severity: "high",
   defaultAction: "require_approval",
+  owasp: ["ASI04", "LLM04"],
   title: "Redirecting a package manager to another registry",
   description:
     "Holds a command that points npm, yarn, pip or poetry at a registry other than the default, whether for one install or by writing the config. The guard CANNOT tell a company's own Artifactory from an attacker's mirror: it has no allow-list, and nothing in a tool call would let it be given one — so it surfaces the redirection and leaves the judgement to a person. Does NOT match reading the config (`npm config get registry`) or an ordinary install. MISSES a registry set in a committed .npmrc, which is a file edit rather than a command. Global flags between the package manager and its subcommand are tolerated (`npm --silent config set registry …`, `pip --no-cache-dir install …`), and an absolute tool path still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",

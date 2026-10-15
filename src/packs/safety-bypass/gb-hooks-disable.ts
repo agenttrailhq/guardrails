@@ -14,6 +14,7 @@ export const gbHooksDisable: Rule = {
   category: "safety-bypass",
   severity: "medium",
   defaultAction: "require_approval",
+  owasp: ["ASI09"],
   title: "Disabling git hooks at the source",
   description:
     'Holds a command that turns git hooks off permanently rather than for one commit — repointing `core.hooksPath`, setting HUSKY=0 or HUSKY_SKIP_HOOKS, or deleting/unsetting the executable bit on files in `.git/hooks/`. A READ of the setting (`git config core.hooksPath` with no value) is not matched. Nothing about the next commit looks any different afterwards, which is what makes it worth a prompt. Does NOT match other `git config` writes (`user.email`, `core.pager`) or installing hooks (`husky install`). It MISSES a hooksPath set through an environment variable in a shell profile. A global flag between `git` and `config` is tolerated (`git -C <dir> config …`, `--no-pager`, `-c k=v`), and an absolute tool path such as `/usr/bin/git` still matches; a flag that itself runs a program is not read. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
