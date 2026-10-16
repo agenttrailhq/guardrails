@@ -2,6 +2,14 @@ name: release
 on:
   push:
     branches: [main]
+  # Publishes a version whose tag and Release commit already exist on main but which is not on
+  # npm, then creates its GitHub release. Runs the publish-existing job only.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish, e.g. v0.2.4
+        required: true
+        type: string
 # The workflow token only reads. Every write (the Release commit, the v* tag,
 # the GitHub release and its comments) uses a token minted from the release
 # GitHub App, which is the one actor allowed to push to protected main and to
@@ -14,6 +22,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   release:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/create-github-app-token@v2
@@ -41,3 +50,109 @@ jobs:
           GIT_AUTHOR_EMAIL: 338791256+agenttrail-public-release[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: agenttrail-public-release[bot]
           GIT_COMMITTER_EMAIL: 338791256+agenttrail-public-release[bot]@users.noreply.github.com
+
+  publish-existing:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0        # tags and origin/main for the checks
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Refuses a malformed, missing or off-main tag, a package.json version that differs from
+      # the tag, and a version npm already has. Picks the dist-tag: latest only when the version
+      # is higher than npm's current latest.
+      - id: check
+        run: bash scripts/release-precheck.sh "$TAG"
+      - run: git checkout --detach "refs/tags/$TAG"
+      - uses: pnpm/action-setup@v3
+      - run: npm install -g npm@latest   # OIDC trusted publishing needs npm >= 11.5.1
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # pnpm pack applies publishConfig (the dist entry points); npm publish then uploads that
+      # tarball unchanged.
+      - name: Pack and check the tarball
+        id: pack
+        env:
+          NAME: ${{ steps.check.outputs.name }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pack"
+          pnpm pack --pack-destination "$RUNNER_TEMP/pack"
+          tarball=$(ls "$RUNNER_TEMP"/pack/*.tgz)
+          python3 scripts/check-tarball.py "$tarball" --package "$NAME" --version "$VERSION"
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+      - name: Publish
+        id: publish
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+          DIST_TAG: ${{ steps.check.outputs.dist_tag }}
+        run: npm publish "$TARBALL" --provenance --access public --tag "$DIST_TAG"
+      # The GitHub release is created as soon as the publish succeeds; the npm check below runs
+      # after it, so a slow registry never holds back the release.
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.check.outputs.version }}
+          DIST_TAG: ${{ steps.check.outputs.dist_tag }}
+        run: |
+          if out=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" 2>&1); then
+            echo "A GitHub release for $TAG already exists; skipping."
+            exit 0
+          elif ! printf '%s' "$out" | grep -q 'release not found'; then
+            echo "$out" >&2
+            exit 1
+          fi
+          notes="$RUNNER_TEMP/notes.md"
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > "$notes"
+          if ! grep -q '[^[:space:]]' "$notes"; then
+            echo "CHANGELOG.md at $TAG has no section for $VERSION" >&2
+            exit 1
+          fi
+          latest=false
+          if [ "$DIST_TAG" = latest ]; then latest=true; fi
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TAG" \
+            --notes-file "$notes" --latest="$latest"
+      # A zero exit from npm publish does not mean the version is installable; wait up to 60
+      # minutes for the registry to serve it, with the entry point from the tarball. Runs whenever
+      # the publish succeeded, even if creating the GitHub release failed.
+      - name: Verify the version is on npm
+        if: ${{ !cancelled() && steps.publish.outcome == 'success' }}
+        timeout-minutes: 65
+        env:
+          NAME: ${{ steps.check.outputs.name }}
+          VERSION: ${{ steps.check.outputs.version }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          want_main=$(tar -xzOf "$TARBALL" package/package.json | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).main')
+          attempts=120   # every 30 seconds for 60 minutes
+          for attempt in $(seq 1 "$attempts"); do
+            got=$(npm view "$NAME@$VERSION" version 2>/dev/null || true)
+            if [ "$got" = "$VERSION" ]; then
+              got_main=$(npm view "$NAME@$VERSION" main)
+              if [ "$got_main" != "$want_main" ]; then
+                echo "npm serves main '$got_main', expected '$want_main'" >&2
+                exit 1
+              fi
+              echo "$NAME@$VERSION is on npm (attempt $attempt)"
+              exit 0
+            fi
+            if [ "$attempt" -lt "$attempts" ]; then sleep 30; fi
+          done
+          echo "::error::$NAME@$VERSION did not appear on npm within 60 minutes of a successful publish" >&2
+          exit 1
