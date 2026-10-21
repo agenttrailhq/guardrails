@@ -24,20 +24,23 @@ jobs:
   release:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # The release environment admits main only; it holds the release App key, and npm
+    # trusted publishing accepts a publish only from a job in it.
+    environment: release
     steps:
-      - uses: actions/create-github-app-token@v2
+      - uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         id: app-token
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0        # full history + tags for version analysis
           # The checkout's saved credentials are what `git push` uses, so they
           # must be the App's, not the workflow token's.
           token: ${{ steps.app-token.outputs.token }}
-      - uses: pnpm/action-setup@v3
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
       - run: npm install -g npm@latest   # OIDC trusted publishing needs npm >= 11.5.1
@@ -54,15 +57,18 @@ jobs:
   publish-existing:
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # The release environment admits main only; it holds the release App key, and npm
+    # trusted publishing accepts a publish only from a job in it.
+    environment: release
     env:
       TAG: ${{ inputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: main
           fetch-depth: 0        # tags and origin/main for the checks
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
       # Refuses a malformed, missing or off-main tag, a package.json version that differs from
@@ -71,7 +77,7 @@ jobs:
       - id: check
         run: bash scripts/release-precheck.sh "$TAG"
       - run: git checkout --detach "refs/tags/$TAG"
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
       - run: npm install -g npm@latest   # OIDC trusted publishing needs npm >= 11.5.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -96,7 +102,7 @@ jobs:
         run: npm publish "$TARBALL" --provenance --access public --tag "$DIST_TAG"
       # The GitHub release is created as soon as the publish succeeds; the npm check below runs
       # after it, so a slow registry never holds back the release.
-      - uses: actions/create-github-app-token@v2
+      - uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         id: app-token
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
