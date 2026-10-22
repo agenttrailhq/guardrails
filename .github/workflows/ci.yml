@@ -42,6 +42,8 @@ jobs:
         run: pnpm build
 
   # Packs the tarball, checks its contents, then installs it in an empty directory and imports it.
+  # The release packs the same way and runs the same check-tarball.py before it publishes
+  # (scripts/release-publish.sh), so a tarball that fails here could not be published either.
   package:
     runs-on: ubuntu-latest
     timeout-minutes: 10

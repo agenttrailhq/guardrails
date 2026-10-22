@@ -6,7 +6,10 @@ Checks:
   2. The top-level entries are exactly EXPECTED_ROOTS. package.json is present in every npm
      tarball and is not compared.
   3. The manifest is not private, and no dependency range uses the `workspace:` protocol.
-  4. Every path named by main, module, types, typings and exports exists in the tarball.
+  4. No path named by main, module, types, typings or exports (at any depth of exports) is
+     under src/. package.json keeps the src/ entry points for development; pnpm pack replaces
+     them with the publishConfig ones, and npm pack and npm publish do not.
+  5. Every path named by main, module, types, typings and exports exists in the tarball.
 
 EXPECTED_ROOTS is written out here rather than read from package.json `files`, so an incorrect
 `files` entry fails the check instead of matching itself.
@@ -60,6 +63,9 @@ def entry_point_targets(manifest: dict) -> list[tuple[str, str]]:
         elif isinstance(node, dict):
             for key, value in node.items():
                 walk_exports(value, f"{label}.{key}")
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                walk_exports(value, f"{label}[{i}]")
 
     if "exports" in manifest:
         walk_exports(manifest["exports"], "exports")
@@ -110,7 +116,12 @@ def main() -> int:
 
     for field, target in entry_point_targets(manifest):
         rel = target[2:] if target.startswith("./") else target
-        if rel not in members:
+        if rel == "src" or rel.startswith("src/"):
+            failures.append(
+                f"manifest {field} points at {target!r}, under src/ "
+                "(the publishConfig entry points were not applied)"
+            )
+        elif rel not in members:
             failures.append(f"manifest {field} points at {target!r}, which is not in the tarball")
 
     if failures:
@@ -122,7 +133,10 @@ def main() -> int:
     print(f"  ok  packed as {manifest['name']}@{manifest['version']}")
     print(f"  ok  top-level entries: {', '.join(sorted(roots))}")
     print("  ok  not private, no workspace: ranges")
-    print(f"  ok  all {len(entry_point_targets(manifest))} manifest entry points exist in the tarball")
+    print(
+        f"  ok  all {len(entry_point_targets(manifest))} manifest entry points exist in the tarball,"
+        " none under src/"
+    )
     if noise:
         print(f"  note  {noise} macOS metadata entries ignored")
     return 0
