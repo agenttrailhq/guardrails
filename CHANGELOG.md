@@ -10,6 +10,12 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.6](https://github.com/agenttrailhq/guardrails/compare/v0.2.5...v0.2.6) (2026-10-22)
+
+### Bug Fixes
+
+* publish the packed tarball so released entry points resolve ([a11b3db](https://github.com/agenttrailhq/guardrails/commit/a11b3dbab9e8e8f936fac7544da57f92c916bf8c))
+
 ## [0.2.5](https://github.com/agenttrailhq/guardrails/compare/v0.2.4...v0.2.5) (2026-10-22)
 
 ### Bug Fixes

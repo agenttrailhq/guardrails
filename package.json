@@ -1,6 +1,6 @@
 {
   "name": "@agenttrail/guardrails",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "type": "module",
   "description": "The AgentTrail guardrail library for AI coding agents: the guardrails, their self-contained schema, and their fixtures.",
   "keywords": [
