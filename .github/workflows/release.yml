@@ -45,6 +45,10 @@ jobs:
           node-version: 22
       - run: npm install -g npm@latest   # OIDC trusted publishing needs npm >= 11.5.1
       - run: pnpm install --frozen-lockfile
+      # .releaserc.json: @semantic-release/npm only writes the version to package.json
+      # (npmPublish false). In the publish step, @semantic-release/exec runs
+      # scripts/release-publish.sh, which packs with pnpm, checks the tarball and publishes it
+      # with provenance; @semantic-release/github then creates the GitHub release.
       - run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -76,30 +80,23 @@ jobs:
       # is higher than npm's current latest.
       - id: check
         run: bash scripts/release-precheck.sh "$TAG"
+      # The release scripts are taken from main, not from the tag, so a tag made before a script
+      # was added or changed is published with the current ones.
+      - run: cp -R scripts "$RUNNER_TEMP/release-scripts"
       - run: git checkout --detach "refs/tags/$TAG"
       - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
       - run: npm install -g npm@latest   # OIDC trusted publishing needs npm >= 11.5.1
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      # pnpm pack applies publishConfig (the dist entry points); npm publish then uploads that
-      # tarball unchanged.
-      - name: Pack and check the tarball
-        id: pack
-        env:
-          NAME: ${{ steps.check.outputs.name }}
-          VERSION: ${{ steps.check.outputs.version }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/pack"
-          pnpm pack --pack-destination "$RUNNER_TEMP/pack"
-          tarball=$(ls "$RUNNER_TEMP"/pack/*.tgz)
-          python3 scripts/check-tarball.py "$tarball" --package "$NAME" --version "$VERSION"
-          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+      # The release job's publish path, run on the tag's tree: the precheck again, pnpm pack
+      # (which applies the publishConfig dist entry points), check-tarball.py, then npm publish
+      # of that tarball with provenance under the dist-tag the precheck picked.
       - name: Publish
         id: publish
         env:
-          TARBALL: ${{ steps.pack.outputs.tarball }}
-          DIST_TAG: ${{ steps.check.outputs.dist_tag }}
-        run: npm publish "$TARBALL" --provenance --access public --tag "$DIST_TAG"
+          VERSION: ${{ steps.check.outputs.version }}
+          PACK_DIR: ${{ runner.temp }}/pack
+        run: bash "$RUNNER_TEMP/release-scripts/release-publish.sh" "$VERSION"
       # The GitHub release is created as soon as the publish succeeds; the npm check below runs
       # after it, so a slow registry never holds back the release.
       - uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
@@ -135,30 +132,13 @@ jobs:
           gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TAG" \
             --notes-file "$notes" --latest="$latest"
       # A zero exit from npm publish does not mean the version is installable; wait up to 60
-      # minutes for the registry to serve it, with the entry point from the tarball. Runs whenever
-      # the publish succeeded, even if creating the GitHub release failed.
+      # minutes for the registry to serve it, with the entry points of the published tarball.
+      # Runs whenever the publish succeeded, even if creating the GitHub release failed.
       - name: Verify the version is on npm
         if: ${{ !cancelled() && steps.publish.outcome == 'success' }}
         timeout-minutes: 65
         env:
-          NAME: ${{ steps.check.outputs.name }}
-          VERSION: ${{ steps.check.outputs.version }}
-          TARBALL: ${{ steps.pack.outputs.tarball }}
+          PACK_DIR: ${{ runner.temp }}/pack
         run: |
-          want_main=$(tar -xzOf "$TARBALL" package/package.json | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).main')
-          attempts=120   # every 30 seconds for 60 minutes
-          for attempt in $(seq 1 "$attempts"); do
-            got=$(npm view "$NAME@$VERSION" version 2>/dev/null || true)
-            if [ "$got" = "$VERSION" ]; then
-              got_main=$(npm view "$NAME@$VERSION" main)
-              if [ "$got_main" != "$want_main" ]; then
-                echo "npm serves main '$got_main', expected '$want_main'" >&2
-                exit 1
-              fi
-              echo "$NAME@$VERSION is on npm (attempt $attempt)"
-              exit 0
-            fi
-            if [ "$attempt" -lt "$attempts" ]; then sleep 30; fi
-          done
-          echo "::error::$NAME@$VERSION did not appear on npm within 60 minutes of a successful publish" >&2
-          exit 1
+          tarball=$(ls "$PACK_DIR"/*.tgz)   # release-publish.sh leaves exactly one
+          bash "$RUNNER_TEMP/release-scripts/verify-published.sh" "$tarball"
