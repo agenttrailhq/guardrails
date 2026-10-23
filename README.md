@@ -348,6 +348,9 @@ Guardrails are meant to be contributed. The bar is not "clever regex"; it is **d
 thing, and stay quiet on the near-miss**.
 
 **1. Write it**, following the shape above. Give it a `description` that says what it misses.
+If you already use it with the guard, `agenttrail-guard guardrails export <id>` writes it in
+this library's format; [Submit a guardrail](CONTRIBUTING.md#submit-a-guardrail) walks through
+it.
 
 **2. Check the shape locally:**
 
@@ -398,8 +401,9 @@ so the guardrail matches nothing, forever, with no error anywhere. Write a singl
 
 ### Ready to open a pull request?
 
-[CONTRIBUTING.md](CONTRIBUTING.md) has a pre-submission checklist, local build and test
-commands, and where to report what. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md),
+[CONTRIBUTING.md](CONTRIBUTING.md) walks through
+[submitting a guardrail](CONTRIBUTING.md#submit-a-guardrail) step by step, and has a
+pre-submission checklist, local build and test commands, and where to report what. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md),
 and report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## Stability and versioning
