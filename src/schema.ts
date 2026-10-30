@@ -171,6 +171,27 @@ const DetailMatchPatternSchema = z
     }
   });
 
+// ── Channels ────────────────────────────────────────────────────────────────
+
+/**
+ * Which text a condition's `detail_contains` / `detail_matches` read.
+ *
+ * - `command`: the text a tool call runs. For `Bash` and `PowerShell` that is the command;
+ *   for an MCP call it is only the argument fields that execute (a terminal server's
+ *   `command`, a database server's `sql`), never free text such as a ticket description.
+ * - `content`: the call's whole input text. For an MCP call that is its serialized input;
+ *   for every other tool it is the same text `command` reads. For guardrails whose signal is
+ *   the text itself wherever it is written, such as a credential.
+ *
+ * When a condition omits it, the channel is `command`, unless the condition's `label` can
+ * only name MCP tools (it starts with `mcp__`), in which case it is `content`: a condition
+ * scoped to one MCP server is about that server's input.
+ */
+export const CHANNELS = ["command", "content"] as const;
+
+/** The text a condition's detail matchers read. */
+export const ChannelSchema = z.enum(CHANNELS);
+
 // ── Match conditions ────────────────────────────────────────────────────────
 
 /**
@@ -187,6 +208,9 @@ const DetailMatchPatternSchema = z
  * - `detail_matches`: optional. Regex patterns against the same text; at least
  *   one must match (OR, unlike `detail_contains`). Case-insensitive.
  * - `file_glob`: optional. Case-insensitive glob against the file path.
+ * - `channel`: optional. Which text `detail_contains` / `detail_matches` read; see
+ *   `CHANNELS`. Only meaningful beside one of them, so a condition carrying `channel`
+ *   without a detail matcher is refused.
  *
  * ── Two engine fields are deliberately absent ────────────────────────────────
  *
@@ -219,11 +243,19 @@ export const MatchConditionSchema = z
       .max(DETAIL_MATCHES_MAX_PATTERNS)
       .optional(),
     file_glob: z.string().min(1).optional(),
+    channel: ChannelSchema.optional(),
   })
   .strict()
   .superRefine((condition, ctx) => {
     const hasCommandMatcher =
       condition.detail_contains !== undefined || condition.detail_matches !== undefined;
+    if (condition.channel !== undefined && !hasCommandMatcher) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "`channel` says which text detail_contains / detail_matches read, so a condition carrying it needs one of them",
+      });
+    }
     if (hasCommandMatcher && condition.file_glob !== undefined) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -447,6 +479,9 @@ export type Severity = (typeof SEVERITIES)[number];
 
 /** What the guard does on a match. */
 export type Action = (typeof ACTIONS)[number];
+
+/** Which text a condition's detail matchers read. */
+export type Channel = (typeof CHANNELS)[number];
 
 /** One condition matched against a tool call. */
 export type MatchCondition = z.infer<typeof MatchConditionSchema>;

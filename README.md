@@ -485,6 +485,11 @@ follow from that:
    merely *names* a command in a text field (`{"title":"fix the rm -rf / bug"}`) is matched the same
    as one that runs it; a JSON blob cannot be told apart from a shell-running MCP server.
 
+A condition can say which text it reads with `channel`: `command` (the text a call runs) or `content`
+(the call's whole input). When it is omitted the channel is `command`, unless the condition's `label`
+starts with `mcp__`, which makes it `content`. A condition carrying `channel` needs `detail_contains` or
+`detail_matches`. Versions up to and including 0.2.6 reject the field.
+
 File guardrails match by path on whichever file tool a client uses. No guardrail is shell-only by design; a
 guardrail that does not reach the MCP channel does so because its pattern, not its label, does not match
 the serialized shape.
