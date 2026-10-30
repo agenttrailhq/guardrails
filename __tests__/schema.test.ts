@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  CHANNELS,
   DETAIL_MATCHES_MAX_PATTERN_LENGTH,
   DETAIL_MATCHES_MAX_PATTERNS,
   defineRule,
@@ -248,6 +249,62 @@ describe("match composition", () => {
   it("requires kind on a condition", () => {
     const match = { any_of: [{ label: "Bash", detail_contains: ["rm"] }] };
     expect(parseRule(ruleWith({ match } as unknown as Partial<RuleInput>)).success).toBe(false);
+  });
+});
+
+describe("channel", () => {
+  it("is exactly command and content", () => {
+    expect(CHANNELS).toEqual(["command", "content"]);
+  });
+
+  it.each(CHANNELS)("accepts %s beside detail_contains", (channel) => {
+    const match = { any_of: [{ kind: "execute_tool", detail_contains: ["AKIA"], channel }] };
+    expect(parseRule(ruleWith({ match })).success).toBe(true);
+  });
+
+  it("accepts it beside detail_matches", () => {
+    const match = {
+      any_of: [
+        {
+          kind: "execute_tool",
+          detail_matches: ["ghp_[A-Za-z0-9]{36}"],
+          channel: "content" as const,
+        },
+      ],
+    };
+    expect(parseRule(ruleWith({ match })).success).toBe(true);
+  });
+
+  it("is optional, so every existing condition still parses", () => {
+    const match = { any_of: [{ kind: "execute_tool", detail_contains: ["danger"] }] };
+    expect(parseRule(ruleWith({ match })).success).toBe(true);
+  });
+
+  it("rejects a value outside the two", () => {
+    const match = { any_of: [{ kind: "execute_tool", detail_contains: ["x"], channel: "url" }] };
+    expect(parseRule(ruleWith({ match } as unknown as Partial<RuleInput>)).success).toBe(false);
+  });
+
+  it("rejects it on a condition with no detail matcher, where it would read nothing", () => {
+    const labelOnly = {
+      any_of: [{ kind: "execute_tool", label: "mcp__acme__*", channel: "content" }],
+    };
+    const fileOnly = {
+      any_of: [{ kind: "execute_tool", file_glob: "**/.env", channel: "command" }],
+    };
+    for (const match of [labelOnly, fileOnly]) {
+      expect(parseRule(ruleWith({ match } as unknown as Partial<RuleInput>)).success).toBe(false);
+    }
+  });
+
+  it("is allowed in none_of, like any other condition", () => {
+    const match = {
+      any_of: [{ kind: "execute_tool", detail_contains: ["danger"] }],
+      none_of: [
+        { kind: "execute_tool", detail_contains: ["--dry-run"], channel: "command" as const },
+      ],
+    };
+    expect(parseRule(ruleWith({ match })).success).toBe(true);
   });
 });
 
