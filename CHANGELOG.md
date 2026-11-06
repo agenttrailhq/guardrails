@@ -10,6 +10,12 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.7](https://github.com/agenttrailhq/guardrails/compare/v0.2.6...v0.2.7) (2026-11-06)
+
+### Features
+
+* add an optional channel to a match condition ([bf1d158](https://github.com/agenttrailhq/guardrails/commit/bf1d15896c0eb356b858cd05e1589de7062df639))
+
 ## [0.2.6](https://github.com/agenttrailhq/guardrails/compare/v0.2.5...v0.2.6) (2026-10-22)
 
 ### Bug Fixes
