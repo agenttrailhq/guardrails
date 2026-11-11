@@ -16,6 +16,7 @@ import { requireApprovalRmRf } from "./require-approval-rm-rf.js";
 import { wtBranchForceDelete } from "./wt-branch-force-delete.js";
 import { wtCheckoutDiscard } from "./wt-checkout-discard.js";
 import { wtCleanFdx } from "./wt-clean-fdx.js";
+import { wtDemoContributionCheck } from "./wt-demo-contribution-check.js";
 import { wtResetHard } from "./wt-reset-hard.js";
 import { wtResetMerge } from "./wt-reset-merge.js";
 import { wtRestorePath } from "./wt-restore-path.js";
@@ -32,4 +33,5 @@ export const rules: readonly Rule[] = [
   wtResetMerge,
   blockForcePush,
   requireApprovalRmRf,
+  wtDemoContributionCheck,
 ];

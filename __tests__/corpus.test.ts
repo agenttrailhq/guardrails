@@ -38,9 +38,9 @@ function conditionsOf(rule: Rule) {
   ];
 }
 
-describe("the corpus is 74 rules across eleven packs", () => {
-  it("has exactly 74 rules", () => {
-    expect(RULES.length).toBe(74);
+describe("the corpus is 75 rules across eleven packs", () => {
+  it("has exactly 75 rules", () => {
+    expect(RULES.length).toBe(75);
   });
 
   /**
@@ -54,7 +54,7 @@ describe("the corpus is 74 rules across eleven packs", () => {
    */
   it("distributes them across the packs as harm-grouping produced", () => {
     const counts: Record<Pack, number> = {
-      "working-tree": 9,
+      "working-tree": 10,
       "destructive-data": 8,
       "prod-infra": 8,
       "secret-exposure": 10,
@@ -69,7 +69,7 @@ describe("the corpus is 74 rules across eleven packs", () => {
     for (const pack of PACKS) {
       expect(RULES_BY_PACK[pack].length, `pack ${pack}`).toBe(counts[pack]);
     }
-    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(74);
+    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(75);
   });
 
   it("leaves no pack empty — an empty pack in `rules list` reads as coverage", () => {
@@ -447,6 +447,7 @@ const OWASP_TAGS: Record<string, readonly string[]> = {
   "wt.branch-force-delete": ["ASI02", "LLM03"],
   "wt.checkout-discard": ["ASI02", "LLM03"],
   "wt.clean-fdx": ["ASI02", "LLM03"],
+  "wt.demo-contribution-check": ["ASI02"],
   "wt.reset-hard": ["ASI02", "LLM03"],
   "wt.reset-merge": ["ASI02", "LLM03"],
   "wt.restore-path": ["ASI02", "LLM03"],
