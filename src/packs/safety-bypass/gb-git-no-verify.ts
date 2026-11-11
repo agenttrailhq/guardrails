@@ -48,6 +48,11 @@ export const gbGitNoVerify: Rule = {
       bash('git -C /repo commit --no-verify -m "wip"'),
       bash("git --no-pager push --no-verify origin main"),
       mcp({ command: 'git commit --no-verify -m "wip"' }),
+      // The same command under the other generic argument names, on an unmapped tool.
+      mcp({ cmd: 'git commit --no-verify -m "wip"' }),
+      mcp({ script: 'git commit --no-verify -m "wip"' }),
+      // A mapped tool: `MCP_COMMAND_FIELDS` names the field that runs it.
+      mcp({ command: 'git commit --no-verify -m "wip"' }, "mcp__iterm__write_to_terminal"),
     ],
     allow: [
       mentionInSearch("git commit --no-verify -m wip"),

@@ -41,6 +41,11 @@ export const ddDatabaseDrop: Rule = {
       bash("aws rds delete-db-instance --db-instance-identifier prod-1"),
       bash("aws --profile prod rds delete-db-instance --db-instance-identifier prod-1"),
       mcp({ command: "dropdb myapp_production" }),
+      // The same command under the other generic argument names, on an unmapped tool.
+      mcp({ cmd: "dropdb myapp_production" }),
+      mcp({ script: "dropdb myapp_production" }),
+      // A mapped tool: `MCP_COMMAND_FIELDS` names the field that runs it.
+      mcp({ command: "dropdb myapp_production" }, "mcp__commands__run_command"),
     ],
     allow: [
       ...mentions("dropdb myapp_production"),

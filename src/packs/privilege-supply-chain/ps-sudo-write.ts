@@ -38,6 +38,11 @@ export const psSudoWrite: Rule = {
       bash("sudo rm -rf /var/lib/app"),
       bash('sudo sh -c "echo x > /etc/motd"'),
       mcp({ command: "sudo cp dist/app /usr/local/bin/app" }),
+      // The same command under the other generic argument names, on an unmapped tool.
+      mcp({ cmd: "sudo cp dist/app /usr/local/bin/app" }),
+      mcp({ script: "sudo cp dist/app /usr/local/bin/app" }),
+      // A mapped tool: `MCP_COMMAND_FIELDS` names the field that runs it.
+      mcp({ command_line: "sudo cp dist/app /usr/local/bin/app" }, "mcp__commands__run_process"),
     ],
     allow: [
       ...mentions("echo 127.0.0.1 x | sudo tee -a /etc/hosts"),
