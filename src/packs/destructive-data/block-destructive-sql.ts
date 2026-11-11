@@ -1,5 +1,5 @@
 import { QUOTED_MENTION } from "../../exemptions.js";
-import { bash, mentions } from "../../fixtures.js";
+import { bash, mcp, mentions } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /**
@@ -44,6 +44,22 @@ export const blockDestructiveSql: Rule = {
       bash("psql -h db.internal -c 'TRUNCATE TABLE sessions;'"),
       bash("mysql -e 'drop database app;'"),
       bash("psql -c 'Drop Table sessions;'"),
+      // A database server's SQL argument: the generic `sql` field on an unmapped tool, then
+      // each mapped database tool in `MCP_COMMAND_FIELDS`.
+      mcp({ sql: "DROP TABLE users;" }),
+      mcp({ sql: "DROP TABLE users;" }, "mcp__postgres__query"),
+      mcp({ query: "DROP TABLE sessions;" }, "mcp__sqlite__read_query"),
+      mcp({ query: "DROP TABLE users;" }, "mcp__sqlite__write_query"),
+      mcp(
+        { query: "DROP TABLE IF EXISTS users; CREATE TABLE users (id INTEGER)" },
+        "mcp__sqlite__create_table",
+      ),
+      mcp({ project_id: "proj", query: "TRUNCATE TABLE sessions;" }, "mcp__supabase__execute_sql"),
+      mcp(
+        { project_id: "proj", name: "drop_legacy_users", query: "DROP TABLE legacy_users;" },
+        "mcp__supabase__apply_migration",
+      ),
+      mcp({ project_id: "proj", sql: "DROP DATABASE app;" }, "mcp__neon__run_sql"),
     ],
     allow: [
       ...mentions("psql -c DROP TABLE users;"),

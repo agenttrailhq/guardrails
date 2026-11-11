@@ -494,6 +494,20 @@ A condition can say which text it reads with `channel`: `command` (the text a ca
 starts with `mcp__`, which makes it `content`. A condition carrying `channel` needs `detail_contains` or
 `detail_matches`. Versions up to and including 0.2.6 reject the field.
 
+Which arguments of an MCP call are its command text is data in this package, exported from both entry
+points:
+
+- `MCP_COMMAND_FIELDS` maps a tool to the fields that execute, keyed by the tool segment of
+  `mcp__<server>__<tool>` (the server segment is whatever a user named the server). For example
+  `start_process` → `command`, `execute_sql` → `query`, `run_sql` → `sql`.
+- `MCP_GENERIC_COMMAND_FIELDS` (`command`, `cmd`, `sql`, `script`) is read on a tool the map does not list.
+
+A `command` condition reads only those fields, so text an MCP call writes but does not run, such as an
+issue description or a chat message, matches no command guardrail. A `content` condition reads the whole
+input. `block-hardcoded-secrets` is the one `content` guardrail, because a key leaks wherever it is
+written. A checker that does not read these tables yet reads the whole input on both channels, as
+described above.
+
 File guardrails match by path on whichever file tool a client uses. No guardrail is shell-only by design; a
 guardrail that does not reach the MCP channel does so because its pattern, not its label, does not match
 the serialized shape.

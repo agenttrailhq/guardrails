@@ -40,6 +40,11 @@ export const ddRmRfAbsolute: Rule = {
       bash('git commit -m "x" && rm -rf /'),
       bash('echo "rm -rf /" | bash'),
       mcp({ command: "rm -rf /" }),
+      // The same command under the other generic argument names, on an unmapped tool.
+      mcp({ cmd: "rm -rf /" }),
+      mcp({ script: "rm -rf /" }),
+      // A mapped tool: `MCP_COMMAND_FIELDS` names the field that runs it.
+      mcp({ command: "rm -rf /", timeout_ms: 5000 }, "mcp__desktop-commander__start_process"),
     ],
     allow: [
       ...mentions("rm -rf /"),

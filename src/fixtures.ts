@@ -52,10 +52,16 @@ export function file(filePath: string, tool = "Edit"): Fixture {
 /**
  * A fixture on the command channel, from an MCP tool.
  *
- * The guard hands the engine an MCP call's serialized `tool_input` as the `detail`
- * text (`JSON.stringify(input)`), so a fixture mirrors that: the `input` object is
- * serialized and its JSON becomes the command. `tool` defaults to a generic MCP
- * name; the widened `{Bash,PowerShell,mcp__*}` label matches any `mcp__*`.
+ * The `input` object is serialized (`JSON.stringify(input)`) and its JSON becomes the
+ * command, which is the text an engine receives for an MCP call. A condition on the
+ * `content` channel reads all of it. A condition on the `command` channel reads only the
+ * argument fields that execute: the ones `MCP_COMMAND_FIELDS` lists for `tool`, or, for a
+ * tool it does not map, `MCP_GENERIC_COMMAND_FIELDS`. So a block fixture for a shell
+ * guardrail carries its command in one of those fields.
+ *
+ * `tool` defaults to `mcp__server__run`, which no table maps, so its `command`, `cmd`, `sql`
+ * and `script` fields are read; the widened `{Bash,PowerShell,mcp__*}` label matches any
+ * `mcp__*`.
  *
  * The point is to prove a command SHAPE carried by an MCP server still fires the
  * guardrail (`{ command: "rm -rf /" }`), and that a serialized MENTION is NOT exempted:

@@ -42,6 +42,14 @@ export const wtResetHard: Rule = {
       bash("/usr/bin/git reset --hard"),
       pwsh("git reset --hard"),
       mcp({ command: "git reset --hard HEAD~2" }),
+      // The same command under the other generic argument names, on an unmapped tool.
+      mcp({ cmd: "git reset --hard HEAD~2" }),
+      mcp({ script: "git reset --hard HEAD~2" }),
+      // A mapped tool: `MCP_COMMAND_FIELDS` names the field that runs it.
+      mcp(
+        { pid: 4242, input: "git reset --hard HEAD~2" },
+        "mcp__desktop-commander__interact_with_process",
+      ),
     ],
     allow: [
       ...mentions("git reset --hard"),

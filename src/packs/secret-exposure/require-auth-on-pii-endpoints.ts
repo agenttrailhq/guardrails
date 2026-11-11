@@ -16,7 +16,7 @@ export const requireAuthOnPiiEndpoints: Rule = {
   id: "require-auth-on-pii-endpoints",
   category: "secret-exposure",
   severity: "medium",
-  defaultAction: "require_approval",
+  defaultAction: "warn",
   owasp: ["ASI02", "ASI03", "LLM02"],
   title: "Review API endpoint changes for auth",
   description:

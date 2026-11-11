@@ -42,6 +42,11 @@ export const piKubectlDelete: Rule = {
       bash("kubectl -n prod delete deployment api"),
       bash("kubectl --context prod-eu drain node-3 --ignore-daemonsets"),
       mcp({ command: "kubectl delete deployment api" }),
+      // The same command under the other generic argument names, on an unmapped tool.
+      mcp({ cmd: "kubectl delete deployment api" }),
+      mcp({ script: "kubectl delete deployment api" }),
+      // A mapped tool: `MCP_COMMAND_FIELDS` names the field that runs it.
+      mcp({ command: "kubectl delete deployment api" }, "mcp__desktop-commander__execute_command"),
     ],
     allow: [
       ...mentions("kubectl delete deployment api"),
