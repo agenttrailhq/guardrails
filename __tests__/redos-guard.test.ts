@@ -17,7 +17,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { hasNestedUnboundedQuantifier } from "../src/index.js";
+import { hasNestedUnboundedQuantifier, RULES } from "../src/index.js";
 
 describe("rejects nested unbounded quantifiers (star height >= 2)", () => {
   it.each([
@@ -114,5 +114,42 @@ describe("distinguishes syntax from literal characters", () => {
 describe("the documented limit", () => {
   it("accepts star height 1 even when it can be quadratic", () => {
     expect(hasNestedUnboundedQuantifier("(a|a)*")).toBe(false);
+  });
+});
+
+/**
+ * The guardrails that scan every argument of a command repeat a bounded group of
+ * arguments, which star height 1 allows but which could still be slow on a long
+ * command. Each of their patterns is timed on long inputs that match nothing, the case
+ * that makes a backtracking engine try every split.
+ */
+describe("argument-scanning patterns stay fast on long commands", () => {
+  const SCANNING_RULES = ["dd.rm-rf-absolute", "require-approval-rm-rf", "block-force-push"];
+  const patterns = RULES.filter((rule) => SCANNING_RULES.includes(rule.id)).flatMap((rule) =>
+    [...(rule.match.any_of ?? []), ...(rule.match.none_of ?? [])].flatMap(
+      (c) => c.detail_matches ?? [],
+    ),
+  );
+  const repeat = (word: string, n: number) => Array.from({ length: n }, () => word).join(" ");
+  const inputs = [
+    `rm ${repeat("-v", 400)}`,
+    `rm ${repeat("abcdef", 600)}`,
+    `rm ${repeat("-x", 300)} /`,
+    `rm -rf ${repeat("node_modules", 300)} x`,
+    `git push ${repeat("-x", 600)}`,
+    `git rm ${repeat("a", 900)} --cached;`,
+    // A pattern that scans to the end of the input from each `git push` grows with the
+    // square of the length. 8192 characters is the longest command the hook passes on.
+    "git push x ".repeat(745).slice(0, 8192),
+  ];
+
+  it("finds the patterns it times", () => {
+    expect(patterns.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it.each(inputs.map((input) => [input.slice(0, 24), input]))("%s… under 50 ms", (_l, input) => {
+    const start = performance.now();
+    for (const source of patterns) new RegExp(source, "i").test(input);
+    expect(performance.now() - start).toBeLessThan(50);
   });
 });

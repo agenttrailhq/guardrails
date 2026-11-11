@@ -315,3 +315,41 @@ export const QUOTED_MENTION: readonly MatchCondition[] = [
  */
 export const LEADING_FLAGS =
   "(?:\\s+-{1,2}[A-Za-z][\\w-]{0,24}(?:=\\S{1,40})?(?:\\s+[^-\\s]\\S{0,40})?){0,6}";
+
+// ── The arguments of one rm invocation ───────────────────────────────────────
+
+/**
+ * The start of an `rm` word.
+ *
+ * Start of text, or any character that is not a word character, a dot or a dash. A
+ * slash admits a tool path (`/bin/rm`), a backslash admits `\rm`, a quote or `(`
+ * admits `bash -c "…"` and a subshell, and whitespace admits `sudo`, `env`, `xargs`
+ * and `git`. The dash is excluded so a container runtime's `--rm` flag is not read as
+ * the command, and the dot so `.rm` is not either.
+ */
+export const RM_WORD = "(?:^|[^\\w.-])rm";
+
+/** One argument: no blank, command separator or redirection inside it. */
+const RM_ARG = "[^\\s;&|<>]{1,200}";
+
+/**
+ * Zero to twelve arguments of the same `rm`, flags and operands in any order.
+ *
+ * Arguments are separated by spaces or tabs only, never a newline, so a scan cannot
+ * run from one line's `rm` into the next line's path. A redirection target is not an
+ * argument (`<` and `>` are outside `RM_ARG`), and `; & |` end the scan. `--` is an
+ * ordinary argument here, so "flags, `--`, target" needs no special case.
+ *
+ * Bounded like `LEADING_FLAGS`: twelve arguments of at most 200 characters, so the
+ * repetition never nests an unbounded quantifier.
+ */
+export const RM_ARGS = `(?:[ \\t]+${RM_ARG}){0,12}`;
+
+/** The rest of an argument that has already started. */
+export const RM_ARG_REST = "[^\\s;&|<>]{0,200}";
+
+/** A recursive flag: a short cluster holding `r` (`R` too, patterns are case-insensitive), or the long form. */
+export const RM_RECURSIVE = "(?:-[a-z]{0,8}r[a-z]{0,8}|--recursive)";
+
+/** The end of an argument. */
+export const ARG_END = "(?:[ \\t;&|)]|$)";
