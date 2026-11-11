@@ -10,6 +10,12 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.8](https://github.com/agenttrailhq/guardrails/compare/v0.2.7...v0.2.8) (2026-11-11)
+
+### Features
+
+* add the MCP command-field tables ([3b85491](https://github.com/agenttrailhq/guardrails/commit/3b85491c3f8358d414c7bcb8a69d3348c1441e14))
+
 ## [0.2.7](https://github.com/agenttrailhq/guardrails/compare/v0.2.6...v0.2.7) (2026-11-06)
 
 ### Features
