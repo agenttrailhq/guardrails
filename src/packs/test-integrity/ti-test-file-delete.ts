@@ -1,5 +1,5 @@
 // cspell:words pytest testdata
-import { QUOTED_MENTION, SHELL_AND_MCP } from "../../exemptions.js";
+import { QUOTED_MENTION, SHELL_AND_MCP, TEMP_DELETE } from "../../exemptions.js";
 import { bash, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
@@ -24,7 +24,7 @@ export const tiTestFileDelete: Rule = {
   owasp: ["ASI09", "ASI10"],
   title: "Deleting a test file or test directory",
   description:
-    "Holds a command that deletes a test: `rm`, `unlink`, `git rm` or PowerShell's `Remove-Item` naming a file that follows a test runner's naming convention — `*.test.*`, `*.spec.*`, `*_test.go`, `*_test.py`, `test_*.py` — or a `__tests__/`, `test/`, `tests/` or `spec/` directory, or a file inside one. Deleting the failing test instead of fixing the code leaves a suite that still passes. Deliberately NOT matched: build, report and dependency output — anything under `dist/`, `build/`, `out/`, `coverage/` or `node_modules/`, and `test-results/`, `playwright-report/` and `.pytest_cache` — and moving or staging a test (`mv`, `git add`). Misses a test deleted with `find … -delete`, moved out of the tree, emptied or disabled with a file tool, and a test directory with any other name. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",
+    "Holds a command that deletes a test: `rm`, `unlink`, `git rm` or PowerShell's `Remove-Item` naming a file that follows a test runner's naming convention — `*.test.*`, `*.spec.*`, `*_test.go`, `*_test.py`, `test_*.py` — or a `__tests__/`, `test/`, `tests/` or `spec/` directory, or a file inside one. Deleting the failing test instead of fixing the code leaves a suite that still passes. Deliberately NOT matched: build, report and dependency output — anything under `dist/`, `build/`, `out/`, `coverage/` or `node_modules/`, and `test-results/`, `playwright-report/` and `.pytest_cache` — and moving or staging a test (`mv`, `git add`). Also not held: one `rm`, `unlink` or `Remove-Item` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder, `$TMPDIR`, `$TEMP`, `$TMP`), such as clearing a throwaway checkout; the bare temp folder, a `..` segment, a variable after the root, any other variable, a second target outside temp, and a chained second command are still held, and `git rm` is never exempt. Misses a test deleted with `find … -delete`, moved out of the tree, emptied or disabled with a file tool, and a test directory with any other name. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",
   match: {
     any_of: [
       {
@@ -37,7 +37,7 @@ export const tiTestFileDelete: Rule = {
         ],
       },
     ],
-    none_of: [...QUOTED_MENTION],
+    none_of: [...QUOTED_MENTION, TEMP_DELETE],
   },
   fixtures: {
     block: [
@@ -52,6 +52,14 @@ export const tiTestFileDelete: Rule = {
       bash("rm -f src/a.ts src/a.test.ts"),
       bash("rm src/test/java/com/example/BillingTest.java"),
       pwsh("Remove-Item -Recurse -Force tests"),
+      // The temp exemption is narrow: each of these still holds.
+      bash("rm -rf /tmp/review/../../srv/app/__tests__"),
+      bash("rm -rf /tmp/$X/__tests__"),
+      bash("rm -rf $SCRATCH/repo/__tests__"),
+      bash("rm -rf $SCRATCHPAD/repo/tests"),
+      bash("rm -rf /tmp/review/__tests__ src/__tests__"),
+      bash("rm -rf /tmp/review/__tests__ && rm -rf src/__tests__"),
+      bash("git rm -r /tmp/review/tests"),
     ],
     allow: [
       ...mentions("rm src/parser.test.ts"),
@@ -66,6 +74,14 @@ export const tiTestFileDelete: Rule = {
       bash("rm src/test-utils.ts"),
       bash("rm -rf testdata/tmp"),
       bash("rm attest_report.py"),
+      // Clearing a throwaway checkout inside the system temp folder.
+      bash("rm -rf /tmp/review-1182/src/__tests__"),
+      bash("rm /private/tmp/agent-1/scratchpad/repo/src/parser.test.ts"),
+      bash("rm -rf $TMPDIR/review/tests"),
+      bash(`rm -rf \${TMPDIR}/review/spec`),
+      bash("rm -rf /var/folders/zz/abc123/T/review/__tests__ /tmp/other/tests"),
+      bash("unlink /var/tmp/run-7/e2e/login.spec.ts"),
+      pwsh("Remove-Item -Recurse -Force $env:TEMP\\review\\tests"),
     ],
   },
 };

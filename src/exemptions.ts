@@ -268,6 +268,62 @@ export const QUOTED_MENTION: readonly MatchCondition[] = [
   HTTP_BODY_MENTION,
 ];
 
+// ── A delete whose every target is under the system temp folder ──────────────
+
+/**
+ * A temp root: the system temp folders, the macOS per-user temp folder, and the variables the
+ * operating system names for it (`TMPDIR`, `TEMP`, `TMP`, and PowerShell's `$env:TEMP` /
+ * `$env:TMP`). Any other variable is NOT a temp root, whatever its name says: the guard sees
+ * the command's text, not its environment, so honouring `$SCRATCH` would hand every command a
+ * one-word way out.
+ */
+const TEMP_ROOT =
+  "(?:(?:/private)?/(?:var/)?tmp|(?:/private)?/var/folders/[\\w+-]{1,8}/[\\w+-]{1,40}/T|\\$(?:TMPDIR|TEMP|TMP)|\\$\\{(?:TMPDIR|TEMP|TMP)\\}|\\$env:(?:TEMP|TMP))";
+
+/**
+ * One path segment after the root: never a `..` segment, and never a variable, a quote, a
+ * substitution, a redirection or a command separator. A glob such as `*` is an ordinary
+ * segment. A name that only starts with dots (`..cache`) is an ordinary segment too.
+ */
+const TEMP_SEG = "(?!\\.\\.(?:[/\\\\\\s]|$))[^\\s/\\\\;&|<>`$'\"()]{1,99}";
+
+/** One target: a temp root, then at least one segment, then an optional trailing separator. */
+const TEMP_TARGET = `${TEMP_ROOT}(?:[/\\\\]${TEMP_SEG}){1,24}[/\\\\]?`;
+
+/**
+ * A command that is ONE delete whose every target is strictly inside the system temp folder:
+ * `rm`, `unlink` or PowerShell's `Remove-Item`, its flags, then one to twelve targets, and
+ * nothing else. Spread into the `none_of` of a guardrail that holds deletes, so clearing a
+ * scratch checkout under temp is not held.
+ *
+ * Anchored at both ends, which is what keeps it narrow:
+ *
+ *     rm -rf /tmp/review-1                      exempt
+ *     rm -rf $TMPDIR/build /tmp/out             exempt: every target is under temp
+ *     rm -rf /tmp                               NOT exempt: the bare root, not something in it
+ *     rm -rf /tmp/a /srv/data                   NOT exempt: the second target is not under temp
+ *     rm -rf /tmp/a && rm -rf /srv/data         NOT exempt: a second command follows
+ *     rm -rf /tmp/x/../../etc                   NOT exempt: a `..` segment leaves temp
+ *     rm -rf /tmp/$X                            NOT exempt: a variable may hold `..`
+ *     rm -rf $SCRATCH/x                         NOT exempt: not a temp root
+ *
+ * Not part of {@link QUOTED_MENTION}: it is an exemption about WHERE a delete lands, so each
+ * guardrail that takes it names it at its call site.
+ *
+ * Limits: it decides on the text alone, so a symbolic link inside temp that points out
+ * of it, a `TMPDIR` set to a folder that is not temp, and a glob that matches more than the
+ * caller meant are all still exempt; a `cd` into temp followed by a relative delete, a quoted
+ * target, and an MCP tool's input are not exempt, because the text does not show the target
+ * under temp; and two temp deletes chained in one command are not exempt.
+ */
+export const TEMP_DELETE: MatchCondition = {
+  kind: "execute_tool",
+  label: "{Bash,PowerShell}",
+  detail_matches: [
+    `^\\s*(?:rm|unlink|remove-item)(?:[ \\t]+-{1,2}[a-z][a-z-]{0,24}){0,8}(?:[ \\t]+--)?(?:[ \\t]+${TEMP_TARGET}){1,12}[ \\t]*$`,
+  ],
+};
+
 // ── Leading global flags, between a tool and its subcommand ──────────────────
 
 /**
