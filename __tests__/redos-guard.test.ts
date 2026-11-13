@@ -124,7 +124,15 @@ describe("the documented limit", () => {
  * that makes a backtracking engine try every split.
  */
 describe("argument-scanning patterns stay fast on long commands", () => {
-  const SCANNING_RULES = ["dd.rm-rf-absolute", "require-approval-rm-rf", "block-force-push"];
+  const SCANNING_RULES = [
+    "dd.rm-rf-absolute",
+    "require-approval-rm-rf",
+    "block-force-push",
+    // The temp-folder delete exemption, the tunnel command position and the SQL client lookahead.
+    "ti.test-file-delete",
+    "ex.tunnel-expose",
+    "block-destructive-sql",
+  ];
   const patterns = RULES.filter((rule) => SCANNING_RULES.includes(rule.id)).flatMap((rule) =>
     [...(rule.match.any_of ?? []), ...(rule.match.none_of ?? [])].flatMap(
       (c) => c.detail_matches ?? [],
@@ -141,6 +149,16 @@ describe("argument-scanning patterns stay fast on long commands", () => {
     // A pattern that scans to the end of the input from each `git push` grows with the
     // square of the length. 8192 characters is the longest command the hook passes on.
     "git push x ".repeat(745).slice(0, 8192),
+    // Temp-folder targets that almost qualify: deep paths, many targets, a bad last character.
+    `rm -rf /tmp/${repeat("a", 2000).replaceAll(" ", "/")};`,
+    `rm -rf ${repeat("/tmp/a/b", 600)} $X`,
+    `rm -rf ${repeat("$TMPDIR/a/..", 400)}`,
+    // Wrapper words and separators with no tunnel tool after them.
+    `${repeat("sudo env A=1 timeout 9", 300)} ngrok`,
+    `${repeat(";", 4000)} x`,
+    // Long text with SQL phrases and no client, and a client with no phrase.
+    `${repeat("drop table x", 600)}`,
+    `psql ${repeat("drop tables", 600)}`,
   ];
 
   it("finds the patterns it times", () => {
