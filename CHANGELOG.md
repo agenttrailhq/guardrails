@@ -10,6 +10,15 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.10](https://github.com/agenttrailhq/guardrails/compare/v0.2.9...v0.2.10) (2026-11-16)
+
+### Bug Fixes
+
+* allow deletes whose every target is inside the temp folder ([3a3da0b](https://github.com/agenttrailhq/guardrails/commit/3a3da0bcf9debc3d0aca678b78a47e7b11d0796f))
+* block destructive SQL in a shell only when a client runs it ([c4421b9](https://github.com/agenttrailhq/guardrails/commit/c4421b94549f7e864abe6049d1bb60a2be65699c))
+* match tunnel tools only where the shell runs them ([7503633](https://github.com/agenttrailhq/guardrails/commit/7503633ae9f2fb020fa22c75d2cd02f58cd1a3ec))
+* stop holding reads of Terraform source as production config ([c4f65db](https://github.com/agenttrailhq/guardrails/commit/c4f65dbbe5b7eac6579119893a03a5d4a6050a75))
+
 ## [0.2.9](https://github.com/agenttrailhq/guardrails/compare/v0.2.8...v0.2.9) (2026-11-13)
 
 ### Bug Fixes
