@@ -5,24 +5,27 @@
 *                                   @samc621 @kashyap-techsuite @loveneeshdhir
 
 # Release, CI and the supply chain: what gets built and published.
-/.github/                           @samc621
-/scripts/                           @samc621
-/.releaserc.json                    @samc621
-/package.json                       @samc621
-/pnpm-lock.yaml                     @samc621
-/pnpm-workspace.yaml                @samc621
-/tsup.config.ts                     @samc621
-/SECURITY.md                        @samc621
-/LICENSE                            @samc621
+/.github/                           @samc621 @kashyap-techsuite @loveneeshdhir
+/scripts/                           @samc621 @kashyap-techsuite @loveneeshdhir
+/.releaserc.json                    @samc621 @kashyap-techsuite @loveneeshdhir
+/package.json                       @samc621 @kashyap-techsuite @loveneeshdhir
+/pnpm-lock.yaml                     @samc621 @kashyap-techsuite @loveneeshdhir
+/pnpm-workspace.yaml                @samc621 @kashyap-techsuite @loveneeshdhir
+/tsup.config.ts                     @samc621 @kashyap-techsuite @loveneeshdhir
+/SECURITY.md                        @samc621 @kashyap-techsuite @loveneeshdhir
+/LICENSE                            @samc621 @kashyap-techsuite @loveneeshdhir
 
 # The guardrail format, and the exemption every command guardrail shares.
-/src/schema.ts                      @samc621
-/src/exemptions.ts                  @samc621
+/src/schema.ts                      @samc621 @kashyap-techsuite @loveneeshdhir
+/src/exemptions.ts                  @samc621 @kashyap-techsuite @loveneeshdhir
 
 # The checks that stop an unsafe guardrail or a bad package from shipping.
-/__tests__/banned-constructs.test.ts @samc621
-/__tests__/redos-guard.test.ts      @samc621
-/__tests__/check-tarball.test.ts    @samc621
-/__tests__/tarball-fixture.ts       @samc621
-/__tests__/release-*.test.ts        @samc621
-/__tests__/verify-published.test.ts @samc621
+/__tests__/banned-constructs.test.ts @samc621 @kashyap-techsuite @loveneeshdhir
+/__tests__/redos-guard.test.ts      @samc621 @kashyap-techsuite @loveneeshdhir
+/__tests__/check-tarball.test.ts    @samc621 @kashyap-techsuite @loveneeshdhir
+/__tests__/tarball-fixture.ts       @samc621 @kashyap-techsuite @loveneeshdhir
+/__tests__/release-*.test.ts        @samc621 @kashyap-techsuite @loveneeshdhir
+/__tests__/verify-published.test.ts @samc621 @kashyap-techsuite @loveneeshdhir
+
+# Changes to this file need @samc621.
+/.github/CODEOWNERS                 @samc621
