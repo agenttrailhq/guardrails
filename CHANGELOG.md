@@ -10,6 +10,13 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.11](https://github.com/agenttrailhq/guardrails/compare/v0.2.10...v0.2.11) (2026-11-20)
+
+### Bug Fixes
+
+* allow rm -rf when every target is inside the temp folder ([cc17866](https://github.com/agenttrailhq/guardrails/commit/cc17866bc6ae56f430613c50831497dd1b4a06b5))
+* refuse temp delete targets the shell can expand outside temp ([ee9f2cb](https://github.com/agenttrailhq/guardrails/commit/ee9f2cbd79012fcdac7a145a3d5b527ee1192a9b))
+
 ## [0.2.10](https://github.com/agenttrailhq/guardrails/compare/v0.2.9...v0.2.10) (2026-11-16)
 
 ### Bug Fixes
