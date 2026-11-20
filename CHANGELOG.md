@@ -10,6 +10,12 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.12](https://github.com/agenttrailhq/guardrails/compare/v0.2.11...v0.2.12) (2026-11-20)
+
+### Bug Fixes
+
+* use literal Windows temp roots for PowerShell temp deletes ([31115b4](https://github.com/agenttrailhq/guardrails/commit/31115b46c74cc9fdeafe1ed19bcf3b6acae11d89))
+
 ## [0.2.11](https://github.com/agenttrailhq/guardrails/compare/v0.2.10...v0.2.11) (2026-11-20)
 
 ### Bug Fixes
