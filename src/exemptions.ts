@@ -288,20 +288,36 @@ const SHELL_TEMP_ROOT =
  * expansion or glob (`* ? [ ] { }`), because each of those can turn the text into a path the
  * pattern did not see (`{..,x}` expands to `..`, `.\.` is `..`, `.[.]` globs to `..`).
  */
-const SHELL_TEMP_SEG = "[^\\s/\\\\;&|<>`$'\"(){}\\[\\]?*!]{1,99}";
+const SHELL_TEMP_SEG = "[^\\s/\\\\;&|<>`$'\"(){}\\[\\]?*!\\x00]{1,99}";
 
 /** One shell target: no `..` anywhere in it, a root, then at least one segment. */
 const SHELL_TEMP_TARGET = `(?!\\S*\\.\\.)${SHELL_TEMP_ROOT}(?:/${SHELL_TEMP_SEG}){1,24}/?`;
 
-/** One PowerShell segment: as on the shell, with the backtick escape excluded too. */
-const PWSH_TEMP_SEG = "[^\\s/\\\\;&|<>`$'\"(){}\\[\\]?*]{1,99}";
+/**
+ * One PowerShell segment. As on the shell, plus: the backtick escape; `,`, which builds an array
+ * in argument mode, so `…\x,C:\Windows` would delete a second path; `:`, which starts a drive
+ * or provider path (`FileSystem::C:\…`); `@` and `#`; the curly quotes U+2018 to U+201F,
+ * which PowerShell reads as quotes; and every control or invisible character that `\s` does not
+ * cover: U+0000 to U+001F, U+007F to U+009F (including U+0085, which .NET treats as whitespace
+ * and so as an argument separator), U+180E, U+200B to U+200D and U+2060.
+ */
+const PWSH_TEMP_SEG =
+  "[^\\s/\\\\;&|<>`$'\"(){}\\[\\]?*,:@#\\x00-\\x1f\\x7f-\\x9f\\u180e\\u200b-\\u200d\\u2060\\u2018-\\u201F]{1,99}";
 
 /**
- * One PowerShell target: no `..` anywhere in it, `$env:TEMP` or `$env:TMP`, then at least one
- * segment, separated by `\` or `/`. `$TEMP` and `$TMP` without `env:` are shell variables that
- * are normally unset, so they are not roots.
+ * A PowerShell temp root: the literal Windows temp folders, `<drive>:\Users\<name>\AppData\Local\Temp`
+ * and `<drive>:\Windows\Temp`, with `\` or `/` between parts. The user name is letters, digits,
+ * `_`, `.` and `-`, not starting with `.`; a user folder with any other character is not a root.
+ *
+ * `$env:TEMP` and `$env:TMP` are NOT roots: PowerShell also runs on macOS and Linux, where both
+ * are normally unset and expand to nothing, so `$env:TMP/etc` would be `/etc`. `$TEMP` and `$TMP`
+ * without `env:` are ordinary variables and normally unset everywhere.
  */
-const PWSH_TEMP_TARGET = `(?!\\S*\\.\\.)\\$env:te?mp(?:[/\\\\]${PWSH_TEMP_SEG}){1,24}[/\\\\]?`;
+const PWSH_TEMP_ROOT =
+  "[a-z]:[/\\\\](?:users[/\\\\][\\w-][\\w.-]{0,63}[/\\\\]appdata[/\\\\]local|windows)[/\\\\]temp";
+
+/** One PowerShell target: no `..` anywhere in it, a root, then at least one segment. */
+const PWSH_TEMP_TARGET = `(?!\\S*\\.\\.)${PWSH_TEMP_ROOT}(?:[/\\\\]${PWSH_TEMP_SEG}){1,24}[/\\\\]?`;
 
 /**
  * A command that is ONE delete whose every target is strictly inside the system temp folder,
@@ -325,7 +341,7 @@ const PWSH_TEMP_TARGET = `(?!\\S*\\.\\.)\\$env:te?mp(?:[/\\\\]${PWSH_TEMP_SEG}){
  * guardrail that takes it names it at its call site.
  *
  * Limits: it decides on the text alone. A symbolic link inside temp that points out of it, and a
- * `TMPDIR` or `TEMP` set to a folder that is not temp, are still exempt. Patterns are matched
+ * `TMPDIR` set to a folder that is not temp, are still exempt. Patterns are matched
  * without regard to case, so `/TMP/x` is exempt too, which on a case-sensitive file system is a
  * folder other than `/tmp`. A `cd` into temp followed by a relative delete, a quoted target, a
  * glob, any name containing `..`, an MCP tool's input, and two temp deletes chained in one command
