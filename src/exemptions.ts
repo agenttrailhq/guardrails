@@ -271,58 +271,82 @@ export const QUOTED_MENTION: readonly MatchCondition[] = [
 // ── A delete whose every target is under the system temp folder ──────────────
 
 /**
- * A temp root: the system temp folders, the macOS per-user temp folder, and the variables the
- * operating system names for it (`TMPDIR`, `TEMP`, `TMP`, and PowerShell's `$env:TEMP` /
- * `$env:TMP`). Any other variable is NOT a temp root, whatever its name says: the guard sees
- * the command's text, not its environment, so honouring `$SCRATCH` would hand every command a
- * one-word way out.
+ * A temp root on the shell: the system temp folders, the macOS per-user temp folder, and
+ * `${TMPDIR:?}`.
+ *
+ * `$TMPDIR`, `$TEMP` and `$TMP` are NOT roots: each is unset on many systems, and an unset
+ * variable expands to nothing, so `$TMP/etc` is `/etc`. `${TMPDIR:?}` is accepted because the
+ * shell refuses to run the command when the variable is unset or empty. Any other variable is not
+ * a root either, whatever its name says: the guard sees the command's text, not its environment.
  */
-const TEMP_ROOT =
-  "(?:(?:/private)?/(?:var/)?tmp|(?:/private)?/var/folders/[\\w+-]{1,8}/[\\w+-]{1,40}/T|\\$(?:TMPDIR|TEMP|TMP)|\\$\\{(?:TMPDIR|TEMP|TMP)\\}|\\$env:(?:TEMP|TMP))";
+const SHELL_TEMP_ROOT =
+  "(?:(?:/private)?/(?:var/)?tmp|(?:/private)?/var/folders/[\\w+-]{1,8}/[\\w+-]{1,40}/T|\\$\\{TMPDIR:\\?\\})";
 
 /**
- * One path segment after the root: never a `..` segment, and never a variable, a quote, a
- * substitution, a redirection or a command separator. A glob such as `*` is an ordinary
- * segment. A name that only starts with dots (`..cache`) is an ordinary segment too.
+ * One path segment on the shell, after a `/`. Never a character the shell expands or treats
+ * specially: no variable, quote, substitution, redirection, separator, backslash escape, brace
+ * expansion or glob (`* ? [ ] { }`), because each of those can turn the text into a path the
+ * pattern did not see (`{..,x}` expands to `..`, `.\.` is `..`, `.[.]` globs to `..`).
  */
-const TEMP_SEG = "(?!\\.\\.(?:[/\\\\\\s]|$))[^\\s/\\\\;&|<>`$'\"()]{1,99}";
+const SHELL_TEMP_SEG = "[^\\s/\\\\;&|<>`$'\"(){}\\[\\]?*!]{1,99}";
 
-/** One target: a temp root, then at least one segment, then an optional trailing separator. */
-const TEMP_TARGET = `${TEMP_ROOT}(?:[/\\\\]${TEMP_SEG}){1,24}[/\\\\]?`;
+/** One shell target: no `..` anywhere in it, a root, then at least one segment. */
+const SHELL_TEMP_TARGET = `(?!\\S*\\.\\.)${SHELL_TEMP_ROOT}(?:/${SHELL_TEMP_SEG}){1,24}/?`;
+
+/** One PowerShell segment: as on the shell, with the backtick escape excluded too. */
+const PWSH_TEMP_SEG = "[^\\s/\\\\;&|<>`$'\"(){}\\[\\]?*]{1,99}";
 
 /**
- * A command that is ONE delete whose every target is strictly inside the system temp folder:
- * `rm`, `unlink` or PowerShell's `Remove-Item`, its flags, then one to twelve targets, and
- * nothing else. Spread into the `none_of` of a guardrail that holds deletes, so clearing a
- * scratch checkout under temp is not held.
+ * One PowerShell target: no `..` anywhere in it, `$env:TEMP` or `$env:TMP`, then at least one
+ * segment, separated by `\` or `/`. `$TEMP` and `$TMP` without `env:` are shell variables that
+ * are normally unset, so they are not roots.
+ */
+const PWSH_TEMP_TARGET = `(?!\\S*\\.\\.)\\$env:te?mp(?:[/\\\\]${PWSH_TEMP_SEG}){1,24}[/\\\\]?`;
+
+/**
+ * A command that is ONE delete whose every target is strictly inside the system temp folder,
+ * and nothing else: `rm` or `unlink` on Bash, `Remove-Item` or one of its aliases on PowerShell,
+ * its flags, then one to twelve targets. Spread into the `none_of` of a guardrail that holds or
+ * blocks deletes, so clearing a scratch checkout under temp is not held.
  *
  * Anchored at both ends, which is what keeps it narrow:
  *
  *     rm -rf /tmp/review-1                      exempt
- *     rm -rf $TMPDIR/build /tmp/out             exempt: every target is under temp
+ *     rm -rf ${TMPDIR:?}/build /tmp/out         exempt: every target is under temp
  *     rm -rf /tmp                               NOT exempt: the bare root, not something in it
  *     rm -rf /tmp/a /srv/data                   NOT exempt: the second target is not under temp
  *     rm -rf /tmp/a && rm -rf /srv/data         NOT exempt: a second command follows
- *     rm -rf /tmp/x/../../etc                   NOT exempt: a `..` segment leaves temp
+ *     rm -rf /tmp/x/../../etc                   NOT exempt: `..` appears in the target
+ *     rm -rf /tmp/{..,x}/etc                    NOT exempt: brace expansion
  *     rm -rf /tmp/$X                            NOT exempt: a variable may hold `..`
- *     rm -rf $SCRATCH/x                         NOT exempt: not a temp root
+ *     rm -rf $TMP/etc                           NOT exempt: `$TMP` may be unset
  *
  * Not part of {@link QUOTED_MENTION}: it is an exemption about WHERE a delete lands, so each
  * guardrail that takes it names it at its call site.
  *
- * Limits: it decides on the text alone, so a symbolic link inside temp that points out
- * of it, a `TMPDIR` set to a folder that is not temp, and a glob that matches more than the
- * caller meant are all still exempt; a `cd` into temp followed by a relative delete, a quoted
- * target, and an MCP tool's input are not exempt, because the text does not show the target
- * under temp; and two temp deletes chained in one command are not exempt.
+ * Limits: it decides on the text alone. A symbolic link inside temp that points out of it, and a
+ * `TMPDIR` or `TEMP` set to a folder that is not temp, are still exempt. Patterns are matched
+ * without regard to case, so `/TMP/x` is exempt too, which on a case-sensitive file system is a
+ * folder other than `/tmp`. A `cd` into temp followed by a relative delete, a quoted target, a
+ * glob, any name containing `..`, an MCP tool's input, and two temp deletes chained in one command
+ * are not exempt, because the text does not show the target strictly under temp.
  */
-export const TEMP_DELETE: MatchCondition = {
-  kind: "execute_tool",
-  label: "{Bash,PowerShell}",
-  detail_matches: [
-    `^\\s*(?:rm|unlink|remove-item)(?:[ \\t]+-{1,2}[a-z][a-z-]{0,24}){0,8}(?:[ \\t]+--)?(?:[ \\t]+${TEMP_TARGET}){1,12}[ \\t]*$`,
-  ],
-};
+export const TEMP_DELETE: readonly MatchCondition[] = [
+  {
+    kind: "execute_tool",
+    label: "Bash",
+    detail_matches: [
+      `^\\s*(?:rm|unlink)(?:[ \\t]+-{1,2}[a-z][a-z-]{0,24}){0,8}(?:[ \\t]+--)?(?:[ \\t]+${SHELL_TEMP_TARGET}){1,12}[ \\t]*$`,
+    ],
+  },
+  {
+    kind: "execute_tool",
+    label: "PowerShell",
+    detail_matches: [
+      `^\\s*(?:remove-item|rm|ri|del|rd|rmdir)(?:[ \\t]+-[a-z][a-z-]{0,24}){0,8}(?:[ \\t]+${PWSH_TEMP_TARGET}){1,12}[ \\t]*$`,
+    ],
+  },
+];
 
 // ── Leading global flags, between a tool and its subcommand ──────────────────
 

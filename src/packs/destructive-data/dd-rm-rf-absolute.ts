@@ -24,9 +24,11 @@ import type { Rule } from "../../schema.js";
  * files. `rm -f /tmp/app.pid` has no recursive flag and is not matched.
  *
  * One `rm` whose every target is strictly inside the system temp folder is not blocked
- * (`TEMP_DELETE`): clearing a scratch checkout under `/tmp` is routine, and the exemption
- * refuses the bare temp folder, a `..` segment, a variable after the root and any second
- * target or command, so it cannot be used to reach outside temp.
+ * (`TEMP_DELETE`): clearing a scratch checkout under `/tmp` is routine. The exemption refuses
+ * the bare temp folder, `..` anywhere in a target, any character the shell would expand (a glob,
+ * a brace, a backslash), a temp variable that may be unset, a variable after the root, and any
+ * second target or command. It reads the text only, so a symbolic link inside temp that points
+ * out of it is still exempt (see `TEMP_DELETE` for its other limits).
  */
 export const ddRmRfAbsolute: Rule = {
   id: "dd.rm-rf-absolute",
@@ -36,7 +38,7 @@ export const ddRmRfAbsolute: Rule = {
   owasp: ["ASI02", "LLM03"],
   title: "rm -rf against an absolute path",
   description:
-    'Recursive delete rooted at `/` rather than at a relative path, with or without the force flag. The recursive flag (`-r`, `-R`, a cluster such as `-rf` or `-Rv`, or `--recursive`) and the absolute target may sit anywhere among the arguments of one `rm`: split across arguments (`rm -r -f /srv`), after `--`, after a relative operand, or after the target, and a quoted target (`rm -rf "/srv"`) counts too. Deliberately does NOT fire on `rm -rf ./node_modules` or `rm -rf build`, which are safe and happen many times a day, or on `rm -f /tmp/app.pid`, which has no recursive flag. Also not blocked: one `rm` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder, `$TMPDIR`, `$TEMP`, `$TMP`), such as `rm -rf /tmp/review-1`; the bare temp folder (`rm -rf /tmp`), a `..` segment, a variable after the root, a target outside temp in the same `rm`, a chained second command, and the same delete through an MCP tool are still blocked. The exemption reads the text only, so a symbolic link inside temp that points out of it is not caught. Known misses: a variable or `~` target (`rm -rf $DIR`) whose value is only known at run time — for those, see require-approval-rm-rf, which holds them for approval instead; an `rm` with more than twelve arguments before the flag or the target; a command continued onto the next line with a backslash; and a delete through `find -delete` or a file tool. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Recursive delete rooted at `/` rather than at a relative path, with or without the force flag. The recursive flag (`-r`, `-R`, a cluster such as `-rf` or `-Rv`, or `--recursive`) and the absolute target may sit anywhere among the arguments of one `rm`: split across arguments (`rm -r -f /srv`), after `--`, after a relative operand, or after the target, and a quoted target (`rm -rf "/srv"`) counts too. Deliberately does NOT fire on `rm -rf ./node_modules` or `rm -rf build`, which are safe and happen many times a day, or on `rm -f /tmp/app.pid`, which has no recursive flag. Also not blocked: one `rm` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder), such as `rm -rf /tmp/review-1`. Still blocked: the bare temp folder (`rm -rf /tmp`); `..` anywhere in a target; a glob, brace expansion or backslash in a target (`/tmp/{..,x}/etc`, `/tmp/.[.]/etc`); a variable after the root; a target outside temp in the same `rm`; a chained second command; and the same delete through an MCP tool. The exemption reads the text only, so a symbolic link inside temp that points out of it is not caught. Known misses: a variable or `~` target (`rm -rf $DIR`) whose value is only known at run time — for those, see require-approval-rm-rf, which holds them for approval instead; an `rm` with more than twelve arguments before the flag or the target; a command continued onto the next line with a backslash; and a delete through `find -delete` or a file tool. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       {
@@ -50,7 +52,7 @@ export const ddRmRfAbsolute: Rule = {
         ],
       },
     ],
-    none_of: [...QUOTED_MENTION, TEMP_DELETE],
+    none_of: [...QUOTED_MENTION, ...TEMP_DELETE],
   },
   fixtures: {
     block: [
@@ -100,6 +102,17 @@ export const ddRmRfAbsolute: Rule = {
       bash("sudo rm -rf /tmp/a"),
       bash('rm -rf "/tmp/a"'),
       mcp({ command: "rm -rf /tmp/review" }),
+      // Text the shell expands into a path outside temp.
+      bash("rm -rf /tmp/{..,x}/etc"),
+      bash("rm -rf /tmp/a{,/../../etc}"),
+      bash("rm -rf /tmp/.\\./etc"),
+      bash("rm -rf /tmp/\\../etc"),
+      bash("rm -rf /tmp/.[.]/etc"),
+      bash("rm -rf /tmp/?./etc"),
+      bash("rm -rf /tmp/.*/etc"),
+      bash("rm -rf /tmp/*/../.."),
+      bash("rm -rf /tmp/review/*"),
+      bash("rm -rf /tmp/..cache"),
     ],
     allow: [
       ...mentions("rm -rf /"),
@@ -117,12 +130,11 @@ export const ddRmRfAbsolute: Rule = {
       bash("docker run --rm -v /srv:/data img cp -r /a /b"),
       mcp({ command: "rm -rf ./node_modules" }),
       // One rm whose every target is strictly inside the system temp folder.
-      bash("rm -rf /tmp/review-1182"),
+      bash("rm -rf /tmp/review-1"),
       bash("rm -rf /private/tmp/agent-1/scratchpad/repo"),
       bash("rm -r -f /var/tmp/run-7"),
       bash("rm -rf /var/folders/zz/abc123/T/review /tmp/out"),
       bash("rm -rf -- /tmp/a /tmp/b"),
-      bash("rm -rf /tmp/review/*"),
     ],
   },
 };
