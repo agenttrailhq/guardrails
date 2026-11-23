@@ -27,7 +27,7 @@ export const blockDestructiveSql: Rule = {
   owasp: ["ASI02", "LLM03", "LLM10"],
   title: "Block destructive SQL",
   description:
-    'Blocks commands that execute destructive SQL DDL — DROP TABLE, TRUNCATE or DROP DATABASE. On a shell command (Bash, PowerShell, and the Cursor and Codex shells mapped to them) it blocks only when a SQL client is on the same command — `psql`, `pgcli`, `mysql`, `mysqlsh`, `mariadb`, `mycli`, `sqlite3`, `litecli`, `sqlcmd`, `sqlplus`, `usql`, `clickhouse-client`, `cockroach sql`, `snowsql`, `bq query`, `cqlsh`, `duckdb`, `prisma db execute` or `wrangler d1 execute`, including through `docker exec`, `kubectl exec`, `ssh` or an env prefix — so SQL that is only TEXT is not blocked: a PR or issue body, a heredoc or `printf` that writes a migration file, a note. With a client on the line, `TRUNCATE` is matched in any case with or without `TABLE`. Not caught on a shell: a statement in a file the line does not show (`psql -f drop.sql`, `psql < drop.sql`, a migration tool such as `flyway`, `liquibase`, `dbmate`, `prisma migrate` or `alembic`), a script that runs a client the line does not name, a client this list does not name, and a client word that appears only in text (`gh pr create --body "… psql … DROP TABLE …"` is still blocked). On an MCP tool (`mcp__*`), which takes the statement itself as its input, the two-word phrases are matched in any case with any spacing, and bare TRUNCATE only in UPPER case, so that arm is CASE-SENSITIVE by design: lower-case `truncate` is also a common identifier, and the cost is that a lower-case `truncate users;` without the `table` keyword is NOT caught there. A command naming a read-only search or history tool (grep, rg, ag, ack, git commit/log/grep/blame/show) is left alone, because searching for the words is not executing them; a compound command that both searches and executes is therefore missed. SQL issued from inside application code is invisible here. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    'Blocks commands that execute destructive SQL DDL — DROP TABLE, TRUNCATE or DROP DATABASE. On a shell command (Bash, PowerShell, and the Cursor and Codex shells mapped to them) it blocks only when a SQL client is on the same command — `psql`, `pgcli`, `mysql`, `mysqlsh`, `mariadb`, `mycli`, `sqlite3`, `litecli`, `sqlcmd`, `sqlplus`, `usql`, `clickhouse-client`, `cockroach sql`, `snowsql`, `bq query`, `cqlsh`, `duckdb`, `prisma db execute` or `wrangler d1 execute`, including through `docker exec`, `kubectl exec`, `ssh` or an env prefix — so SQL that is only TEXT is not blocked: a PR or issue body, a heredoc or `printf` that writes a migration file, a note. With a client on the line, `TRUNCATE` is matched in any case with or without `TABLE`. Not caught on a shell: a statement in a file the line does not show (`psql -f drop.sql`, `psql < drop.sql`, a migration tool such as `flyway`, `liquibase`, `dbmate`, `prisma migrate` or `alembic`), a script that runs a client the line does not name, a client this list does not name, and a client word that appears only in text (`gh pr create --body "… psql … DROP TABLE …"` is still blocked). On an MCP tool (`mcp__*`), which takes the statement itself as its input, the two-word phrases are matched in any case with any spacing, and bare TRUNCATE only in UPPER case, so that arm is CASE-SENSITIVE by design: lower-case `truncate` is also a common identifier, and the cost is that a lower-case `truncate users;` without the `table` keyword is NOT caught there. A search for the words (`grep -rn TRUNCATE db/`, `cat runbook.md | grep -n TRUNCATE`) has no client on it and is not matched; text a search finds and pipes into a client (`grep "DROP TABLE x" notes.sql | psql`) is blocked. So is a read-only query whose output is searched for the words (`psql -c "select query from pg_stat_activity" | grep -i "drop table"`), because the client and the words share the line. SQL issued from inside application code is invisible here. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
   match: {
     any_of: [
       // Shell: only when a SQL client is on the line. `truncate` in any case, because the
@@ -53,16 +53,7 @@ export const blockDestructiveSql: Rule = {
       },
       { kind: "execute_tool", label: "mcp__*", detail_contains: ["TRUNCATE"] },
     ],
-    none_of: [
-      ...QUOTED_MENTION,
-      {
-        kind: "execute_tool",
-        detail_matches: [
-          "\\b(grep|egrep|fgrep|rg|ripgrep|ag|ack)\\b",
-          "\\bgit\\s+(commit|log|grep|blame|show)\\b",
-        ],
-      },
-    ],
+    none_of: [...QUOTED_MENTION],
   },
   fixtures: {
     block: [
@@ -81,6 +72,17 @@ export const blockDestructiveSql: Rule = {
       bash("sqlite3 app.db 'DROP TABLE cache;'"),
       bash("npx wrangler d1 execute app --command 'DROP TABLE users'"),
       pwsh('sqlcmd -S localhost -Q "DROP DATABASE app"'),
+      // Text a search finds, piped into a client.
+      bash('grep -h "DROP TABLE users" notes.sql | psql app'),
+      bash('rg -o "TRUNCATE TABLE sessions" notes.md | psql -d app'),
+      bash('git show HEAD:x.sql | grep "DROP TABLE" | sqlite3 app.db'),
+      // Accepted over-match: a read-only query whose output is searched for the words. A
+      // client and the words are on one line, and nothing here can tell output from input.
+      bash('psql -c "select query from pg_stat_activity" | grep -i "drop table"'),
+      // Accepted over-match: history searched for a statement that names a client.
+      bash("git log -p | grep 'psql -c \"DROP TABLE'"),
+      // An MCP statement naming a schema that is also a search tool's name (`ag`).
+      mcp({ sql: "DROP TABLE ag.users;" }),
       // A database server's SQL argument: the generic `sql` field on an unmapped tool, then
       // each mapped database tool in `MCP_COMMAND_FIELDS`.
       mcp({ sql: "DROP TABLE users;" }),
@@ -101,6 +103,8 @@ export const blockDestructiveSql: Rule = {
     allow: [
       ...mentions("psql -c DROP TABLE users;"),
       bash("grep -rn TRUNCATE db/migrations/"),
+      bash("cat runbook.md | grep -n TRUNCATE"),
+      bash("grep -rn \"psql -c 'DROP TABLE users'\" docs | head"),
       bash('git commit -m "add TRUNCATE step to the runbook"'),
       bash("psql -c 'SELECT * FROM users;'"),
       bash("truncate -s 0 /var/log/app.log"),

@@ -8,7 +8,7 @@ import {
   SHELL_AND_MCP,
   TEMP_DELETE,
 } from "../../exemptions.js";
-import { bash, mcp, mentions } from "../../fixtures.js";
+import { bash, mcp, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
 
 /**
@@ -75,6 +75,36 @@ export const ddRmRfAbsolute: Rule = {
       bash('rm -r "/srv/data"'),
       bash("sudo rm -r -f /srv/data"),
       bash("/bin/rm -r /srv/data"),
+      // A search or history command piped into a delete, a shell, a write or an executing reader.
+      bash("grep -rl x /srv | xargs rm -rf /srv/cache"),
+      bash("rg -l x | xargs rm -r /var/lib/app"),
+      bash('grep -h "rm -rf /srv/data" notes.md | bash'),
+      bash('grep -h "rm -rf /srv/data" notes.md |& bash'),
+      bash('grep -h "rm -rf /srv/data" notes.md | env bash'),
+      bash("rg -o 'rm -rf /srv/data' notes.md | sh"),
+      bash('git log -1 --format=%B | grep "rm -rf /srv/data" | sh'),
+      bash('grep -h "rm -rf /srv/data" notes.md | xargs -0 bash -c'),
+      bash('grep -h "rm -rf /srv/data" notes.md | tee run.sh'),
+      bash('grep -h "rm -rf /srv/data" notes.md | sort -o run.sh'),
+      bash('grep -h "rm -rf /srv/data" notes.md | sort --compress-program=sh'),
+      bash("grep -h \"rm -rf /srv/data\" notes.md | less '+!sh'"),
+      // A newline outside quotes starts a second command.
+      bash('grep "x" notes.md\nrm -rf /srv/data'),
+      bash("git log --oneline\nrm -rf /srv/data"),
+      pwsh('Select-String "x" notes.md\rrm -rf /srv/data'),
+      // An assignment or path that only looks like a quiet tool, and an escaped quote.
+      bash("grep -rl x /srv | cat=1 xargs rm -rf /srv/cache"),
+      bash('cat=1 rm -rf /srv/data; echo "x"'),
+      bash("grep -rl x /srv | head/../../../usr/bin/xargs rm -rf /srv/cache"),
+      bash('echo \\"x; rm -rf /srv/data; \\"'),
+      // An assignment or a path on the carrier word itself runs the next word.
+      bash("grep=1 rm -rf /srv/data"),
+      bash("echo=1 rm -rf /srv/data"),
+      bash('curl=1 rm -rf "/srv/data"'),
+      bash("git=1 rm -rf /srv/data"),
+      bash("cat x; grep=1 rm -rf /srv/data"),
+      bash("sudo grep=1 rm -rf /srv/data"),
+      bash("grep/../../../bin/rm -rf /srv/data"),
       mcp({ command: "rm -rf /" }),
       // The same command under the other generic argument names, on an unmapped tool.
       mcp({ cmd: "rm -rf /" }),
@@ -122,6 +152,19 @@ export const ddRmRfAbsolute: Rule = {
       bash("rm -f /tmp/app.pid"),
       bash("rm -rf $TMPDIR/scratch"),
       bash('wc -l < log; echo "--- rm -rf / ---"; grep -c x log'),
+      // A search whose output only goes into a reader is still a mention.
+      bash('grep -rn "rm -rf /" docs | head -5'),
+      bash('grep -rn "rm -rf /" docs |& head'),
+      bash('grep -rn "rm -rf /" docs | wc -l'),
+      bash('grep -rn "rm -rf /" docs | less'),
+      bash('grep -rn "rm -rf /" docs | grep -v test'),
+      bash('grep -c "rm -rf /" a b | sort -rn'),
+      bash('grep -rn "rm -rf /" docs | sort -t: -k2 -n | head'),
+      bash('grep -rn "rm -rf /" docs | sort | uniq -c | sort -rn'),
+      bash('grep -rn "rm -rf /" docs | cut -d: -f1'),
+      bash('grep -rln "rm -rf /" docs | sort -u | head'),
+      bash('git log -S "rm -rf /" --oneline | head'),
+      bash('curl -s -d "never run rm -rf /" https://example.com/notes | head'),
       bash("rm -r ./build"),
       bash("rm -v /tmp/a.log"),
       bash("rm -rf build 2> /dev/null"),

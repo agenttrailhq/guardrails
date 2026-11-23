@@ -36,11 +36,7 @@
  *     echo "rm -rf /" | bash          -> NOT exempt: `|` is outside the quotes
  *     echo "$(rm -rf /var)"           -> NOT exempt: the shell expands `$( )`
  *
- * `block-destructive-sql` also keeps a looser condition of its own: it exempts any
- * command whose text NAMES a search or history tool, anywhere. That covers a search
- * that is not the FIRST word, such as `cat runbook.md | grep -n TRUNCATE`, and it is
- * why that guardrail misses a compound command that both searches and executes, as its
- * description states. The other four guardrails with their own `none_of`
+ * The four guardrails with a `none_of` of their own
  * (`se.env-print`, `require-approval-rm-rf`, `wt.clean-fdx`, `wt.restore-path`)
  * exclude something else entirely — a dry run, a build directory, `--staged` —
  * and have these conditions appended, not replaced.
@@ -58,13 +54,22 @@
  *              the `>> known_hosts` bypass shape two guardrails match on
  *   `(` `)`  — subshell
  *
- * `|` is the one metacharacter treated per carrier. After `grep`, `git log` or
- * `curl` the pipe consumes that command's OUTPUT — matched lines, history text,
- * an HTTP response — none of which is the quoted payload, and `grep x . | head`
- * is far too ordinary to deny. After `echo` or `printf` the pipe consumes the
- * payload ITSELF: `echo "rm -rf /" | bash` executes it, and `echo "…" | crontab`
- * is `ps.persistence`'s own trigger. So `PRINT_MENTION` forbids `|` and the
- * other three allow it in the trailing position only.
+ * `|` is excluded too. A pipe after a carrier is allowed only into a READER: one of
+ * the quiet tools below, or `sort`, `uniq`, `cut` or `less` with short flags and
+ * nothing else. What
+ * a search, `git log` or `curl` prints is text the command did not write: matched
+ * lines, history, an HTTP response. Piped into a reader it is only looked at, and
+ * `grep x . | head` is far too ordinary to deny. Piped anywhere else it can be run
+ * or written, so these are NOT exempt:
+ *
+ *     grep -rl x /srv | xargs rm -rf        the matched names are deleted
+ *     grep -h "…" notes.md | bash           the matched text is executed
+ *     git show HEAD:x | sponge deploy.sh    the text is written to a script
+ *     grep "…" x | sort -o run.sh           sort with an operand writes a file
+ *     grep "…" x | less '+!sh'              less runs a command given as `+!…`
+ *
+ * After `echo` or `printf` the pipe consumes the payload itself
+ * (`echo "rm -rf /" | bash`), which the same rule covers.
  *
  * Inside a double-quoted run the shell still expands, so `` ` `` and `$(` are
  * excluded there too; a bare `$VAR` is allowed, because a real command
@@ -81,11 +86,16 @@
  *   because a quiet segment provably neither writes nor executes: `sort` (`-o`,
  *   `--compress-program`), `find` (`-exec`), `awk`/`sed`, `tee`/`dd` and `git`
  *   (`push`/`reset`) are NOT quiet, so `git commit -m "x" && rm -rf /`,
- *   `echo "…" | bash` and `sort … ; echo …` all still deny. A quiet segment carries
- *   no quote, so it cannot hide a mention; the mention is in the CARRIER. A single
- *   leading `sudo` before the CARRIER is still tolerated (it changes privilege, not
- *   meaning; `ps.sudo-write` fires on `sudo tee|dd|cp|mv|rm|ln|install|chown|chmod|sh`,
- *   none a carrier). A RUNNER prefix is not tolerated: `pnpm exec rg …`, `npx …` and
+ *   `echo "…" | bash` and `sort … ; echo …` all still deny. After a carrier that starts
+ *   the command, `sort`, `uniq`, `cut` and `less` also count, with short flags and no
+ *   operand. A quiet segment carries
+ *   no quote, so it cannot hide a mention; the mention is in the CARRIER. When quiet
+ *   segments come BEFORE the carrier, only the shell carriers count (`grep`/family,
+ *   `rg`, `ag`, `ack`, `git commit|log|show`, `echo`, `printf`, `curl`, `wget`) and
+ *   no `sudo`. A single leading `sudo` before a carrier that starts the command is
+ *   still tolerated (it changes privilege, not meaning; `ps.sudo-write` fires on
+ *   `sudo tee|dd|cp|mv|rm|ln|install|chown|chmod|sh`, none a carrier). A RUNNER prefix
+ *   is not tolerated: `pnpm exec rg …`, `npx …` and
  *   `xargs -0 grep …` are not exempt, because "some program eventually execs a
  *   search" is a much weaker claim than "this command is a search".
  * - At most four quoted arguments are recognised. A fifth is not exempt.
@@ -94,7 +104,10 @@
  *   flags, so a dangerous string in one of those positions is treated as a
  *   mention. This is the same class the README already names ("nothing a wrapper
  *   hides"), and it is not closed here: doing so needs an argv the evaluator does
- *   not have, and a flag DENY-list would be a new thing to keep current.
+ *   not have, and a flag DENY-list would be a new thing to keep current. The same
+ *   holds for `git grep -O<pager>` (`--open-files-in-pager`), for an `rg --pre <cmd>`
+ *   in a quiet segment after the carrier, and for `less -k<file>`, which loads key
+ *   bindings from a file that can bind a key to a shell command.
  * - `-d "$(cat body.json)"` is not exempt: the substitution runs.
  * - A double-quoted payload containing an unescaped `"` ends the run early.
  * - Only the shell channel. An MCP tool whose serialized input carries the same
@@ -138,22 +151,30 @@ import type { MatchCondition } from "./schema.js";
 export const SHELL_AND_MCP = "{Bash,PowerShell,mcp__*}";
 
 /**
- * Text outside a quoted run, in a carrier that must not chain another command.
- * Excludes both quote characters and every shell metacharacter, `|` included.
+ * The curly quotes U+2018 to U+201F, as a character-class range. PowerShell reads each
+ * of them as a quote, so a run that holds one may end where the pattern does not see it
+ * end. They are written as the characters themselves, not `\u` escapes, so each costs
+ * one character of the pattern length limit.
  */
-const OUTSIDE = "[^\"'|;&`$<>()]";
+const CURLY = "‘-‟";
 
 /**
- * Text outside a quoted run, in a carrier whose STDOUT is not the payload.
- * As {@link OUTSIDE} but tolerates a trailing `| head`, `| jq`, `| grep`.
+ * Text outside a quoted run in a carrier. Excludes both quote characters and every
+ * shell metacharacter, `|` included: a pipe out of a carrier is matched only by the
+ * trailing segments, and only into a reader. A line break outside quotes ends the
+ * command as `;` does, so `\n` is excluded, and `\r`, which PowerShell also reads as a
+ * line break (inside quotes either is part of the text). A backslash is excluded
+ * because it makes the next character literal: `\"` and `\'` do not open a quoted run.
+ * The curly quotes are excluded as quotes.
  */
-const OUTSIDE_PIPEABLE = "[^\"';&`$<>()]";
+const OUTSIDE = `[^"'|;&\`$<>()\\n\\r\\\\${CURLY}]`;
 
 /**
  * One quoted argument: double-quoted with no expansion (`` ` `` / `$(` barred,
- * a bare `$VAR` allowed), or single-quoted with anything at all in it.
+ * a bare `$VAR` allowed), or single-quoted with anything else in it. A curly quote
+ * inside either run ends it in PowerShell, so a run holding one is not a quoted run.
  */
-const QUOTED = '(?:"(?:[^"`$]|\\$[^("])*"|\'[^\']*\')';
+const QUOTED = `(?:"(?:[^"\`$${CURLY}]|\\$[^("${CURLY}])*"|'[^'${CURLY}]*')`;
 
 /**
  * A read-only inspection tool: it reads, counts or searches, and — unlike `sort`
@@ -162,19 +183,32 @@ const QUOTED = '(?:"(?:[^"`$]|\\$[^("])*"|\'[^\']*\')';
  * that writes a file or runs another program. That is what lets a compound command
  * built only from these AROUND a carrier be exempt without hiding an execution.
  */
-const QUIET_TOOL = "(?:wc|cat|head|tail|ls|grep|egrep|rg)";
+const QUIET_TOOL = "(?:wc|cat|head|tail|ls|e?grep|rg)";
 
 /**
  * One quiet segment: a read-only tool and arguments with no quote, pipe, command
  * separator, substitution, subshell, or write-redirect. A read-redirect `<` is
  * allowed (`wc -l < log`); `>` is not, and `(` bars a `<(…)` process substitution.
  * It carries no quote, so it cannot hold a quoted mention — the mention lives in the
- * CARRIER segment; these only surround it.
+ * CARRIER segment; these only surround it. The tool name is a whole word followed by
+ * a space, a tab or the end: `cat=1 xargs …` is an environment assignment and
+ * `head/../bin/xargs` is a path, and neither runs the quiet tool.
  */
-const QUIET_SEG = `${QUIET_TOOL}\\b[^"'|;&\`$>()]*`;
+const QUIET_SEG = `${QUIET_TOOL}(?:[ \\t][^"'|;&\`$>()\\n\\r${CURLY}]*)?`;
 
-/** A separator between segments: `;`, `&&`, `||`, or a pipe. */
-const CHAIN = "(?:;|&&|\\|\\||\\|)";
+/**
+ * `sort`, `uniq`, `cut` or `less` reading stdin, with short flags only.
+ *
+ * No operand and no long flag, so `sort -o file` (writes), `sort --compress-program=…`
+ * (runs a program), `uniq in out` (writes its second operand) and `less +!cmd` (runs a
+ * command) are not readers. `o` is left out of the flag letters for the same reason
+ * (`sort -o`, `less -o` log file). Flags are separated by spaces or tabs only, never a
+ * line break. Used only after a carrier, never before one.
+ */
+const FLAG_ONLY_READER = "(?:sort|uniq|cut|less)(?:[ \\t]+-[a-np-z\\d:,.]{1,10}){0,4}[ \\t]*";
+
+/** A separator between segments: `;`, `&&`, `||`, or a pipe (`|` or `|&`). */
+const CHAIN = "(?:;|&&|\\|[|&]?)";
 
 /**
  * Up to two quiet segments BEFORE the carrier (each ending in a separator), and up
@@ -185,15 +219,45 @@ const CHAIN = "(?:;|&&|\\|\\||\\|)";
  * substitution is barred inside the quote) and `sort … ; echo …` (`sort` can write)
  * are all still denied. Bounded `{0,2}`, so the fragment stays linear (no nested
  * unbounded quantifier) and inside the length cap.
+ *
+ * Whitespace before a separator is matched by the text before it (`OUTSIDE`, a quiet
+ * segment's arguments or a reader's trailing blanks), never by a separate `\s*`. Two
+ * owners for the same run of blanks would let the engine try every split of it, which
+ * is quadratic in its length.
  */
-const LEAD = `(?:${QUIET_SEG}\\s*${CHAIN}\\s*){0,2}`;
-const TRAIL = `(?:\\s*${CHAIN}\\s*${QUIET_SEG}){0,2}`;
+const LEAD = `(?:${QUIET_SEG}${CHAIN}\\s*){0,2}`;
+const TRAIL = `(?:${CHAIN}\\s*${QUIET_SEG}){0,2}`;
 
-/** Up to four quoted arguments separated by safe text, then a safe tail, then quiet segments. */
-const args = (tail: string) => `(?:${OUTSIDE}*${QUOTED}){0,4}${tail}*${TRAIL}$`;
+/**
+ * Up to three segments after a carrier that STARTS the command: quiet tools, or
+ * {@link FLAG_ONLY_READER}, so `… | sort | uniq -c | sort -rn` is exempt. A separate
+ * pattern from the one with {@link LEAD}, because one pattern holding both is longer
+ * than the 320-character limit.
+ */
+const TRAIL_READERS = `(?:${CHAIN}\\s*(?:${QUIET_SEG}|${FLAG_ONLY_READER})){0,3}`;
+
+/** Up to four quoted arguments separated by safe text, then a safe tail, then the trail. */
+const args = (trail = TRAIL) => `(?:${OUTSIDE}*${QUOTED}){0,4}${OUTSIDE}*${trail}$`;
 
 /** As {@link args}, but at least one quoted argument is required. */
-const quotedArgs = (tail: string) => `(?:${OUTSIDE}*${QUOTED}){1,4}${tail}*${TRAIL}$`;
+const quotedArgs = (trail = TRAIL) => `(?:${OUTSIDE}*${QUOTED}){1,4}${OUTSIDE}*${trail}$`;
+
+/**
+ * The two patterns of one carrier.
+ *
+ * The first: quiet segments may come before and after it. It names the shell carriers
+ * only (`leadWords`) and takes no `sudo`, which keeps it inside the length limit.
+ * The second: the carrier starts the command, optionally after one `sudo`, and its
+ * output may also pass through `sort`, `uniq`, `cut` or `less`. It names every carrier.
+ *
+ * In both, the carrier word must be followed by a space or a tab. `grep=1 …` is an
+ * environment assignment and `grep/../…` is a path, and neither runs the carrier; a
+ * carrier with nothing after it mentions nothing, so requiring a blank costs nothing.
+ */
+const carrier = (words: string, leadWords: string, tail: (trail?: string) => string): string[] => [
+  `^\\s*${LEAD}${leadWords}[ \\t]${tail()}`,
+  `^\\s*(?:sudo +)?${words}[ \\t]${tail(TRAIL_READERS)}`,
+];
 
 /**
  * A read-only search: `grep`, `rg`, `ag`, `ack`, PowerShell's `Select-String`.
@@ -204,9 +268,7 @@ const quotedArgs = (tail: string) => `(?:${OUTSIDE}*${QUOTED}){1,4}${tail}*${TRA
  */
 export const SEARCH_MENTION: MatchCondition = {
   kind: "execute_tool",
-  detail_matches: [
-    `^\\s*${LEAD}(?:sudo\\s+)?(?:grep|egrep|fgrep|rg|ag|ack|select-string)\\b${args(OUTSIDE_PIPEABLE)}`,
-  ],
+  detail_matches: carrier("(?:[ef]?grep|rg|ag|ack|select-string)", "(?:[ef]?grep|rg|ag|ack)", args),
 };
 
 /**
@@ -219,23 +281,23 @@ export const SEARCH_MENTION: MatchCondition = {
  */
 export const GIT_TEXT_MENTION: MatchCondition = {
   kind: "execute_tool",
-  detail_matches: [
-    `^\\s*${LEAD}(?:sudo\\s+)?git\\s+(?:commit|log|show|blame|grep|tag)\\b${args(OUTSIDE_PIPEABLE)}`,
-  ],
+  detail_matches: carrier(
+    "git\\s+(?:commit|log|show|blame|grep|tag)",
+    "git\\s+(?:commit|log|show)",
+    args,
+  ),
 };
 
 /**
  * Printing text to a terminal: `echo`, `printf`, `Write-Host`, `Write-Output`.
  *
- * The strict tail is load-bearing here and only here: this carrier's stdout IS
- * the payload, so a pipe would hand it to whatever comes next.
+ * This carrier's stdout IS the payload, so piped anywhere but a reader it would be
+ * handed to whatever comes next.
  * Dropped by `se.token-print`, whose own trigger is an `echo`.
  */
 export const PRINT_MENTION: MatchCondition = {
   kind: "execute_tool",
-  detail_matches: [
-    `^\\s*${LEAD}(?:sudo\\s+)?(?:echo|printf|write-host|write-output)\\b${args(OUTSIDE)}`,
-  ],
+  detail_matches: carrier("(?:echo|printf|write-host|write-output)", "(?:echo|printf)", args),
 };
 
 /**
@@ -252,7 +314,7 @@ export const PRINT_MENTION: MatchCondition = {
  */
 export const HTTP_BODY_MENTION: MatchCondition = {
   kind: "execute_tool",
-  detail_matches: [`^\\s*${LEAD}(?:sudo\\s+)?(?:curl|wget)\\b${quotedArgs(OUTSIDE_PIPEABLE)}`],
+  detail_matches: carrier("(?:curl|wget)", "(?:curl|wget)", quotedArgs),
 };
 
 /**

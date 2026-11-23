@@ -33,6 +33,9 @@ export const blockForcePush: Rule = {
     block: [
       bash("git push origin main --force"),
       bash("git push --force origin main"),
+      // Found by a search and piped to a shell or written to a script.
+      bash('grep -h "git push --force origin main" notes.md | sh'),
+      bash('grep -h "git push --force origin main" notes.md | sponge deploy.sh'),
       bash("git push -f origin feature/x"),
       bash("git push origin main --force-with-lease"),
       bash("git -C /repo push --force origin main"),
