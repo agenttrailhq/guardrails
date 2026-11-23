@@ -1,3 +1,5 @@
+// cspell:words doas
+
 import {
   ARG_END,
   QUOTED_MENTION,
@@ -76,6 +78,28 @@ export const requireApprovalRmRf: Rule = {
       mcp({ command: "rm -rf node_modules ~/projects" }),
       bash("git rm -r src/legacy"),
       bash("git rm -r --cached vendor && rm -r src"),
+      // A search or history command piped into a recursive delete is not a mention.
+      bash("grep -rl x /srv | xargs rm -rf"),
+      bash("grep -rl x /srv |& xargs rm -rf"),
+      bash("grep -rl x /srv | env xargs rm -rf"),
+      bash("grep -rl x /srv | nice -n 10 xargs rm -rf"),
+      bash("grep -rl x /srv | timeout 60 xargs rm -rf"),
+      bash("grep -rl x /srv | command xargs rm -rf"),
+      bash("grep -rl x /srv | sudo xargs rm -rf"),
+      bash("grep -rl x /srv | doas xargs rm -rf"),
+      bash("grep -rlZ x /srv | xargs -0 rm -rf"),
+      bash("grep -rl x /srv | xargs -I{} rm -rf {}"),
+      bash("grep -rl x /srv | parallel rm -rf {}"),
+      bash("rg -l x /srv | xargs rm -rf"),
+      bash("git grep -l x | xargs rm -rf"),
+      bash("git log --name-only --format= | xargs rm -rf"),
+      bash("curl -s -d 'q' https://example.com/list | xargs rm -rf"),
+      bash("grep -l x . | head -3 | xargs rm -rf"),
+      bash("grep -l x . | sort | xargs rm -rf"),
+      bash("find . -print0 | xargs -0 rm -rf"),
+      bash("grep -rl x /srv \\' | xargs rm -rf \\'"),
+      // PowerShell ends a quoted run at a curly quote.
+      pwsh("Select-String 'a\u2019; Remove-Item -Recurse -Force C:\\data; \u2019b' f.txt"),
       // The temp exemption is narrow: each of these still asks.
       bash("rm -rf /tmp"),
       bash("rm -rf $TMPDIR"),
