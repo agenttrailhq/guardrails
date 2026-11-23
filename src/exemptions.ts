@@ -294,35 +294,43 @@ const SHELL_TEMP_SEG = "[^\\s/\\\\;&|<>`$'\"(){}\\[\\]?*!\\x00]{1,99}";
 const SHELL_TEMP_TARGET = `(?!\\S*\\.\\.)${SHELL_TEMP_ROOT}(?:/${SHELL_TEMP_SEG}){1,24}/?`;
 
 /**
- * One PowerShell segment. As on the shell, plus: the backtick escape; `,`, which builds an array
- * in argument mode, so `…\x,C:\Windows` would delete a second path; `:`, which starts a drive
- * or provider path (`FileSystem::C:\…`); `@` and `#`; the curly quotes U+2018 to U+201F,
- * which PowerShell reads as quotes; and every control or invisible character that `\s` does not
- * cover: U+0000 to U+001F, U+007F to U+009F (including U+0085, which .NET treats as whitespace
- * and so as an argument separator), U+180E, U+200B to U+200D and U+2060.
+ * One segment of a Windows temp target: ASCII letters, digits, `.`, `_` and `-`, and nothing else.
+ * Never `.` alone, which names the folder it sits in.
+ *
+ * This form is read under two labels, so every character must mean the same thing to both:
+ * PowerShell (Claude Code's tool, and Cursor's Shell on Windows, which reaches the engine as
+ * `Bash`) and a POSIX shell (Claude Code's `Bash` tool). None of these characters is special to
+ * either: no space, quote, variable, escape, glob (`* ? [ ]`), brace, `,` (a PowerShell array),
+ * `:` (a drive or provider path), `~`, control character, U+0085 or any other non-ASCII character.
  */
-const PWSH_TEMP_SEG =
-  "[^\\s/\\\\;&|<>`$'\"(){}\\[\\]?*,:@#\\x00-\\x1f\\x7f-\\x9f\\u180e\\u200b-\\u200d\\u2060\\u2018-\\u201F]{1,99}";
+const WIN_TEMP_SEG = "(?!\\.(?:\\\\|[ \\t]|$))[A-Za-z0-9._-]{1,99}";
 
 /**
- * A PowerShell temp root: the literal Windows temp folders, `<drive>:\Users\<name>\AppData\Local\Temp`
- * and `<drive>:\Windows\Temp`, with `\` or `/` between parts. The user name is letters, digits,
- * `_`, `.` and `-`, not starting with `.`; a user folder with any other character is not a root.
+ * A Windows temp root: `<drive>:\Users\<name>\AppData\Local\Temp` or `<drive>:\Windows\Temp`. The
+ * user name is letters, digits, `_`, `.` and `-`, not starting with `.`.
+ *
+ * `\` is the only separator, here and between segments. On PowerShell it separates the path. On a
+ * POSIX shell a backslash before a name character is an escape that disappears, so the whole
+ * target becomes ONE file name in the working directory, the parts run together with no
+ * separator: it can never split into a second target or reach another folder. A `/` would make it a real relative
+ * path there, so `/` is not accepted, and neither is a trailing `\`, which a POSIX shell reads as
+ * escaping the character after it.
  *
  * `$env:TEMP` and `$env:TMP` are NOT roots: PowerShell also runs on macOS and Linux, where both
  * are normally unset and expand to nothing, so `$env:TMP/etc` would be `/etc`. `$TEMP` and `$TMP`
  * without `env:` are ordinary variables and normally unset everywhere.
  */
-const PWSH_TEMP_ROOT =
-  "[a-z]:[/\\\\](?:users[/\\\\][\\w-][\\w.-]{0,63}[/\\\\]appdata[/\\\\]local|windows)[/\\\\]temp";
+const WIN_TEMP_ROOT =
+  "[a-z]:\\\\(?:users\\\\[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}\\\\appdata\\\\local|windows)\\\\temp";
 
-/** One PowerShell target: no `..` anywhere in it, a root, then at least one segment. */
-const PWSH_TEMP_TARGET = `(?!\\S*\\.\\.)${PWSH_TEMP_ROOT}(?:[/\\\\]${PWSH_TEMP_SEG}){1,24}[/\\\\]?`;
+/** One Windows target: no `..` anywhere in it, a root, then at least one segment. */
+const WIN_TEMP_TARGET = `(?!\\S*\\.\\.)${WIN_TEMP_ROOT}(?:\\\\${WIN_TEMP_SEG}){1,24}`;
 
 /**
  * A command that is ONE delete whose every target is strictly inside the system temp folder,
- * and nothing else: `rm` or `unlink` on Bash, `Remove-Item` or one of its aliases on PowerShell,
- * its flags, then one to twelve targets. Spread into the `none_of` of a guardrail that holds or
+ * and nothing else: `rm` or `unlink` on Bash with a POSIX temp target, or `Remove-Item`, one of
+ * its aliases or `rm` with a Windows temp target on either label, its flags, then one to twelve
+ * targets. Spread into the `none_of` of a guardrail that holds or
  * blocks deletes, so clearing a scratch checkout under temp is not held.
  *
  * Anchored at both ends, which is what keeps it narrow:
@@ -356,10 +364,14 @@ export const TEMP_DELETE: readonly MatchCondition[] = [
     ],
   },
   {
+    // The Windows temp folder, under both labels: Cursor's Shell runs PowerShell on Windows and
+    // reaches the engine as `Bash`, so the two agents decide a Windows temp delete the same way.
+    // Flags only after `Remove-Item`, `ri` or `rm`, and single-dash only: `cmd`'s `del` and `rd`
+    // read `-s` as a file name, and PowerShell binds an unknown `--name` as a path.
     kind: "execute_tool",
-    label: "PowerShell",
+    label: "{Bash,PowerShell}",
     detail_matches: [
-      `^\\s*(?:remove-item|rm|ri|del|rd|rmdir)(?:[ \\t]+-[a-z][a-z-]{0,24}){0,8}(?:[ \\t]+${PWSH_TEMP_TARGET}){1,12}[ \\t]*$`,
+      `^\\s*(?:(?:remove-item|ri|rm)(?:[ \\t]+-[a-z][a-z-]{0,24}){0,8}|del|rd|rmdir)(?:[ \\t]+${WIN_TEMP_TARGET}){1,12}[ \\t]*$`,
     ],
   },
 ];
