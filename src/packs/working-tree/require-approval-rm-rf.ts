@@ -34,7 +34,7 @@ export const requireApprovalRmRf: Rule = {
   owasp: ["ASI02", "LLM03"],
   title: "Hold `rm -rf` for approval",
   description:
-    'Recursive delete: held for approval rather than blocked, which is the right strength for an operation that is destructive but often legitimate. Catches a recursive flag in any argument of the `rm`, with or without force: `-rf`, `-Rf`, `-fr`, `-r -f`, `-r` alone and `--recursive`, before or after the target, and PowerShell\'s `Remove-Item -Recurse`. Clearing a build directory is EXEMPT (node_modules, dist, build, out, coverage, target, .next, .turbo, .cache, .vite, .parcel-cache, and paths inside them) when every target of that `rm` is one: that shape appears about 220 times in real Claude Code traces against about 3 for a dangerous delete, and a check that asks every time is one people switch off. An absolute path, a $VARIABLE, a ~ path, a source directory, a `..` path out of a build directory, or a build directory followed by another target still asks. `git rm -r --cached` alone, which touches only the index, is exempt. One `rm` or `Remove-Item` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder, `${TMPDIR:?}` on the shell, and on PowerShell the Windows temp folders `C:\\Users\\<name>\\AppData\\Local\\Temp` and `C:\\Windows\\Temp` on any drive) is exempt too, so clearing a throwaway checkout does not ask. Still asked: the bare temp folder; `..` anywhere in a target; a glob, brace expansion or backslash in a shell target; a comma, colon or curly quote in a PowerShell target; a variable after the root; `$TMPDIR`, `$TEMP`, `$TMP`, `$env:TEMP` and `$env:TMP`, which may be unset; any other variable such as `$SCRATCH`; a target outside temp; and a chained second command. Known misses: a delete via a file tool; a build-directory clean-up chained before a second delete in the same command, because the exemption covers the whole command; and an `rm` with more than twelve arguments before the recursive flag. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    "Recursive delete: held for approval rather than blocked, which is the right strength for an operation that is destructive but often legitimate. Catches a recursive flag in any argument of the `rm`, with or without force: `-rf`, `-Rf`, `-fr`, `-r -f`, `-r` alone and `--recursive`, before or after the target, and PowerShell's `Remove-Item -Recurse`. Clearing a build directory is EXEMPT (node_modules, dist, build, out, coverage, target, .next, .turbo, .cache, .vite, .parcel-cache, and paths inside them) when every target of that `rm` is one: that shape appears about 220 times in real Claude Code traces against about 3 for a dangerous delete, and a check that asks every time is one people switch off. An absolute path, a $VARIABLE, a ~ path, a source directory, a `..` path out of a build directory, or a build directory followed by another target still asks. `git rm -r --cached` alone, which touches only the index, is exempt. One `rm` or `Remove-Item` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder, `${TMPDIR:?}` on the shell, and the Windows temp folders `C:\\Users\\<name>\\AppData\\Local\\Temp` and `C:\\Windows\\Temp` on any drive, with `\\` between parts, on PowerShell and on Cursor's Shell, which reaches the engine as Bash) is exempt too, so clearing a throwaway checkout does not ask. Still asked: the bare temp folder; `..` anywhere in a target; a glob, brace expansion or backslash in a shell target; in a Windows target, a `/`, a trailing `\\`, a `.` segment, or any character other than letters, digits, `.`, `_` and `-`; a variable after the root; `$TMPDIR`, `$TEMP`, `$TMP`, `$env:TEMP` and `$env:TMP`, which may be unset; any other variable such as `$SCRATCH`; a target outside temp; and a chained second command. Known misses: a delete via a file tool; a build-directory clean-up chained before a second delete in the same command, because the exemption covers the whole command; and an `rm` with more than twelve arguments before the recursive flag. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",
   match: {
     any_of: [
       {
@@ -125,6 +125,32 @@ export const requireApprovalRmRf: Rule = {
       ),
       pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\..\\..\\Windows"),
       pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp"),
+      // `\` is the only Windows separator; `.` alone names the temp folder; no trailing `\`.
+      pwsh("Remove-Item -Recurse -Force C:/Users/dev/AppData/Local/Temp/review-1/tests"),
+      pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\."),
+      pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\x\\"),
+      // A brace, a glob class and a wildcard, and a double-dash name PowerShell binds as a path.
+      pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\{..,x}\\etc"),
+      pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\.[.]\\etc"),
+      pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\*"),
+      pwsh("Remove-Item -Recurse --src C:\\Users\\dev\\AppData\\Local\\Temp\\x"),
+      // The same Windows forms through Cursor's Shell, which reaches the engine as Bash.
+      bash("Remove-Item -Recurse -Force C:/Users/dev/AppData/Local/Temp/x"),
+      bash("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\x,C:\\Windows"),
+      bash("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\x\u201C,C:\\\u201D"),
+      bash("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\x\u0085\\Windows"),
+      bash("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\..\\..\\Windows"),
+      bash("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\x C:\\Windows"),
+      bash(
+        "Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\x; Remove-Item -Recurse C:\\Windows",
+      ),
+      bash("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\."),
+      bash("Remove-Item -Recurse -Force $env:TEMP\\x"),
+      // On a POSIX shell: a brace, a backslash escape, a glob class, an escaped space.
+      bash("rm -rf C:\\Users\\dev\\AppData\\Local\\Temp\\{..,x}\\etc"),
+      bash("rm -rf C:\\Users\\dev\\AppData\\Local\\Temp\\.\\.\\etc"),
+      bash("rm -rf C:\\Users\\dev\\AppData\\Local\\Temp\\.[.]\\etc"),
+      bash("rm -rf C:\\Users\\dev\\AppData\\Local\\Temp\\x\\ /etc"),
     ],
     allow: [
       ...mentions("rm -Rf /home/user/projects"),
@@ -153,8 +179,13 @@ export const requireApprovalRmRf: Rule = {
       bash("rm -rf /var/folders/zz/abc123/T/review /tmp/out"),
       bash("rm -r -- /var/tmp/run-7"),
       pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\review-1"),
-      pwsh("Remove-Item -Recurse -Force C:/Users/dev/AppData/Local/Temp/review-1/tests"),
+      pwsh("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\review-1\\tests"),
       pwsh("ri -Recurse C:\\Windows\\Temp\\build-7"),
+      // The same through Cursor's Shell (labelled Bash), and on a POSIX shell, where each
+      // target is one file name in the working directory once the backslashes are removed.
+      bash("Remove-Item -Recurse -Force C:\\Users\\dev\\AppData\\Local\\Temp\\review-1"),
+      bash("Remove-Item -Recurse -Force C:\\Windows\\Temp\\build-7 C:\\Windows\\Temp\\build-8"),
+      bash("rm -rf C:\\Users\\dev\\AppData\\Local\\Temp\\review-1"),
     ],
   },
 };

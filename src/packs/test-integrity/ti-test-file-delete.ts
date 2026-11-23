@@ -24,7 +24,7 @@ export const tiTestFileDelete: Rule = {
   owasp: ["ASI09", "ASI10"],
   title: "Deleting a test file or test directory",
   description:
-    "Holds a command that deletes a test: `rm`, `unlink`, `git rm` or PowerShell's `Remove-Item` naming a file that follows a test runner's naming convention — `*.test.*`, `*.spec.*`, `*_test.go`, `*_test.py`, `test_*.py` — or a `__tests__/`, `test/`, `tests/` or `spec/` directory, or a file inside one. Deleting the failing test instead of fixing the code leaves a suite that still passes. Deliberately NOT matched: build, report and dependency output — anything under `dist/`, `build/`, `out/`, `coverage/` or `node_modules/`, and `test-results/`, `playwright-report/` and `.pytest_cache` — and moving or staging a test (`mv`, `git add`). Also not held: one `rm`, `unlink` or `Remove-Item` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder, `${TMPDIR:?}` on the shell, and on PowerShell the Windows temp folders `C:\\Users\\<name>\\AppData\\Local\\Temp` and `C:\\Windows\\Temp` on any drive), such as clearing a throwaway checkout. Still held: the bare temp folder; `..` anywhere in a target; a glob, brace expansion or backslash in a shell target; a comma, colon or curly quote in a PowerShell target; a variable after the root; `$TMPDIR`, `$TEMP`, `$TMP`, `$env:TEMP` and `$env:TMP`, which may be unset; any other variable; a second target outside temp; and a chained second command. `git rm` is never exempt. Misses a test deleted with `find … -delete`, moved out of the tree, emptied or disabled with a file tool, and a test directory with any other name. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",
+    "Holds a command that deletes a test: `rm`, `unlink`, `git rm` or PowerShell's `Remove-Item` naming a file that follows a test runner's naming convention — `*.test.*`, `*.spec.*`, `*_test.go`, `*_test.py`, `test_*.py` — or a `__tests__/`, `test/`, `tests/` or `spec/` directory, or a file inside one. Deleting the failing test instead of fixing the code leaves a suite that still passes. Deliberately NOT matched: build, report and dependency output — anything under `dist/`, `build/`, `out/`, `coverage/` or `node_modules/`, and `test-results/`, `playwright-report/` and `.pytest_cache` — and moving or staging a test (`mv`, `git add`). Also not held: one `rm`, `unlink` or `Remove-Item` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder, `${TMPDIR:?}` on the shell, and the Windows temp folders `C:\\Users\\<name>\\AppData\\Local\\Temp` and `C:\\Windows\\Temp` on any drive, with `\\` between parts, on PowerShell and on Cursor's Shell, which reaches the engine as Bash), such as clearing a throwaway checkout. Still held: the bare temp folder; `..` anywhere in a target; a glob, brace expansion or backslash in a shell target; in a Windows target, a `/`, a trailing `\\`, a `.` segment, or any character other than letters, digits, `.`, `_` and `-`; a variable after the root; `$TMPDIR`, `$TEMP`, `$TMP`, `$env:TEMP` and `$env:TMP`, which may be unset; any other variable; a second target outside temp; and a chained second command. `git rm` is never exempt. Misses a test deleted with `find … -delete`, moved out of the tree, emptied or disabled with a file tool, and a test directory with any other name. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",
   match: {
     any_of: [
       {
@@ -69,6 +69,10 @@ export const tiTestFileDelete: Rule = {
       pwsh("Remove-Item -Recurse $TEMP/../repo/tests"),
       pwsh("Remove-Item -Recurse -Force $env:TEMP/review/tests"),
       pwsh("Remove-Item -Recurse -Force C:/Users/dev/AppData/Local/Temp/x,C:/repo/tests"),
+      // `\` is the only Windows separator, under both labels.
+      pwsh("Remove-Item -Recurse -Force C:/Users/dev/AppData/Local/Temp/review-1/tests"),
+      bash("Remove-Item -Force C:/Users/dev/AppData/Local/Temp/review-1/parser.test.ts"),
+      bash("Remove-Item -Force C:\\Users\\dev\\AppData\\Local\\Temp\\x,C:\\repo\\parser.test.ts"),
     ],
     allow: [
       ...mentions("rm src/parser.test.ts"),
@@ -89,7 +93,9 @@ export const tiTestFileDelete: Rule = {
       bash(`rm -rf \${TMPDIR:?}/review/tests`),
       bash("rm -rf /var/folders/zz/abc123/T/review/__tests__ /tmp/other/tests"),
       bash("unlink /var/tmp/run-7/e2e/login.spec.ts"),
-      pwsh("Remove-Item -Recurse -Force C:/Users/dev/AppData/Local/Temp/review-1/tests"),
+      pwsh("Remove-Item -Force C:\\Users\\dev\\AppData\\Local\\Temp\\review-1\\parser.test.ts"),
+      // The same through Cursor's Shell, which reaches the engine as Bash.
+      bash("Remove-Item -Force C:\\Users\\dev\\AppData\\Local\\Temp\\review-1\\parser.test.ts"),
     ],
   },
 };
