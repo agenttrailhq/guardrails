@@ -10,6 +10,13 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.13](https://github.com/agenttrailhq/guardrails/compare/v0.2.12...v0.2.13) (2026-11-24)
+
+### Bug Fixes
+
+* apply the Windows temp delete exemption under the Bash label ([631ff7a](https://github.com/agenttrailhq/guardrails/commit/631ff7ae64d8ce49f6868c45a57e859f5cf36015))
+* let a quoted mention pipe only into a read-only command ([135f52b](https://github.com/agenttrailhq/guardrails/commit/135f52bfe1f3e9b175f67a78449a69385afe9882))
+
 ## [0.2.12](https://github.com/agenttrailhq/guardrails/compare/v0.2.11...v0.2.12) (2026-11-20)
 
 ### Bug Fixes
