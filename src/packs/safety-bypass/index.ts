@@ -6,11 +6,12 @@
  * which is why every one of them holds for approval rather than blocks: each is
  * also, occasionally, the right thing to do.
  *
- * Seven guardrails.
+ * Eight guardrails.
  */
 
 import type { Rule } from "../../schema.js";
 import { gbAdminMerge } from "./gb-admin-merge.js";
+import { gbAgenttrailDisable } from "./gb-agenttrail-disable.js";
 import { gbAnsiTerminalForgery } from "./gb-ansi-terminal-forgery.js";
 import { gbAuditTrailPurge } from "./gb-audit-trail-purge.js";
 import { gbExecutionPolicyBypass } from "./gb-execution-policy-bypass.js";
@@ -27,4 +28,5 @@ export const rules: readonly Rule[] = [
   gbExecutionPolicyBypass,
   gbAuditTrailPurge,
   gbAnsiTerminalForgery,
+  gbAgenttrailDisable,
 ];

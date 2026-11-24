@@ -28,7 +28,7 @@ Plain data you can read, test, and change. Enforced in **Claude Code**, **Cursor
 
 </div>
 
-[74 guardrails](https://www.agenttrail.sh/guardrails), grouped into 11 packs. Apache-2.0. Published
+[75 guardrails](https://www.agenttrail.sh/guardrails), grouped into 11 packs. Apache-2.0. Published
 as `@agenttrail/guardrails` and enforced by [AgentTrail Guard](https://github.com/agenttrailhq/guard).
 
 ![A Claude Code session: asked to split a name column and push the schema, the agent edits the Prisma schema and seed, then runs npx prisma db push --force-reset to wipe the database. AgentTrail Guard blocks it with the guardrail dd.accept-data-loss, and the agent stops](.github/assets/guard-blocks-force-reset.gif)
@@ -176,7 +176,7 @@ protection, which they never asked to turn off and would not know they had.
 | [`prod-infra`](src/packs/prod-infra/) | 8 | Changing running infrastructure: Terraform, Kubernetes, Helm, cloud deletes, a deploy that names production. |
 | [`secret-exposure`](src/packs/secret-exposure/) | 10 | Credentials and sensitive data leaving where they live. Mostly `warn`: reading a secret is a normal part of a normal day. |
 | [`rce-supply-chain`](src/packs/rce-supply-chain/) | 6 | Running code nobody reviewed: pipe-to-shell, a remote runner, a redirected registry, TLS verification off. |
-| [`safety-bypass`](src/packs/safety-bypass/) | 7 | Turning off a check somebody installed on purpose, or erasing the record of it: `--no-verify`, `--admin` merge, hooks disabled, host-key checking off, history and log purges, forged terminal output. |
+| [`safety-bypass`](src/packs/safety-bypass/) | 8 | Turning off a check somebody installed on purpose, or erasing the record of it: `--no-verify`, `--admin` merge, hooks disabled, host-key checking off, history and log purges, forged terminal output, and the guard itself disabled or removed from the shell. |
 | [`privilege-supply-chain`](src/packs/privilege-supply-chain/) | 6 | Gaining reach or handing it out: `sudo` writes, `chmod 777`, IAM grants, persistence, publishing, new dependencies. |
 | [`file-scope`](src/packs/file-scope/) | 4 | The agent wrote somewhere it had no business writing: its own config, the machine, git's internals, the CI definition. |
 | [`agent-context`](src/packs/agent-context/) | 6 | The agent changing what it is or what it knows (its standing instructions, its memory, its skills and commands, its MCP servers), or starting more agents, or switching another agent's approvals off. |
@@ -206,7 +206,7 @@ command or a file change.
 | `rce-supply-chain` | ASI04 Agentic Supply Chain, ASI05 Unexpected Code Execution | LLM04 Supply Chain, LLM07 Misinformation (`rce.unverified-package`) | `block` or `require_approval` |
 | `privilege-supply-chain` | ASI03 Identity and Privilege Abuse, ASI04 Agentic Supply Chain | LLM03 Excessive Agency (`ps.iam-grant`), LLM04 Supply Chain, LLM07 Misinformation (`flag-dependency-install`) | `require_approval`, except `flag-dependency-install`, which is `warn` |
 | `secret-exposure`, `exfiltration` | ASI02 Tool Misuse and Exploitation, ASI03 Identity and Privilege Abuse | LLM02 Sensitive Information Disclosure | `secret-exposure` is mostly `warn`; `exfiltration` is `block` or `require_approval` |
-| `safety-bypass` | ASI09 Human-Agent Trust Exploitation | LLM10 Improper Output Handling (`gb.ansi-terminal-forgery`) | `require_approval`, except `gb.ansi-terminal-forgery`, which is `warn` |
+| `safety-bypass` | ASI09 Human-Agent Trust Exploitation, ASI10 Rogue Agents (`gb.agenttrail-disable`) | LLM10 Improper Output Handling (`gb.ansi-terminal-forgery`) | `require_approval`, except `gb.ansi-terminal-forgery`, which is `warn` |
 | `agent-context` | ASI03 Identity and Privilege Abuse (`ac.agent-autonomy-flag`), ASI04 Agentic Supply Chain (`ac.mcp-server-add`), ASI06 Memory and Context Poisoning (the write, not its contents), ASI10 Rogue Agents | LLM03 Excessive Agency | `require_approval` |
 | `test-integrity` | ASI10 Rogue Agents, ASI09 Human-Agent Trust Exploitation | | Mostly `warn`; deleting a test file or editing a test runner's configuration is `require_approval` |
 
@@ -458,7 +458,7 @@ Use the first when you want to *apply* guardrails, and the second when you want 
 writing.
 
 They are separate because the guard starts a fresh process on **every single command** an agent runs,
-under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 74
+under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 75
 guardrails that were already checked before release.
 
 ### Known limits of the carrier logic
