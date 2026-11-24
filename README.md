@@ -28,7 +28,7 @@ Plain data you can read, test, and change. Enforced in **Claude Code**, **Cursor
 
 </div>
 
-[75 guardrails](https://www.agenttrail.sh/guardrails), grouped into 11 packs. Apache-2.0. Published
+[76 guardrails](https://www.agenttrail.sh/guardrails), grouped into 11 packs. Apache-2.0. Published
 as `@agenttrail/guardrails` and enforced by [AgentTrail Guard](https://github.com/agenttrailhq/guard).
 
 ![A Claude Code session: asked to split a name column and push the schema, the agent edits the Prisma schema and seed, then runs npx prisma db push --force-reset to wipe the database. AgentTrail Guard blocks it with the guardrail dd.accept-data-loss, and the agent stops](.github/assets/guard-blocks-force-reset.gif)
@@ -175,7 +175,7 @@ protection, which they never asked to turn off and would not know they had.
 | [`destructive-data`](src/packs/destructive-data/) | 8 | Data git cannot bring back: a dropped volume, a dropped database, destructive DDL, a deleted shadow copy. |
 | [`prod-infra`](src/packs/prod-infra/) | 8 | Changing running infrastructure: Terraform, Kubernetes, Helm, cloud deletes, a deploy that names production. |
 | [`secret-exposure`](src/packs/secret-exposure/) | 10 | Credentials and sensitive data leaving where they live. Mostly `warn`: reading a secret is a normal part of a normal day. |
-| [`rce-supply-chain`](src/packs/rce-supply-chain/) | 6 | Running code nobody reviewed: pipe-to-shell, a remote runner, a redirected registry, TLS verification off. |
+| [`rce-supply-chain`](src/packs/rce-supply-chain/) | 7 | Running code nobody reviewed: pipe-to-shell, a remote runner, a redirected registry, TLS verification off, decoded or unpacked text run by a shell. |
 | [`safety-bypass`](src/packs/safety-bypass/) | 8 | Turning off a check somebody installed on purpose, or erasing the record of it: `--no-verify`, `--admin` merge, hooks disabled, host-key checking off, history and log purges, forged terminal output, and the guard itself disabled or removed from the shell. |
 | [`privilege-supply-chain`](src/packs/privilege-supply-chain/) | 6 | Gaining reach or handing it out: `sudo` writes, `chmod 777`, IAM grants, persistence, publishing, new dependencies. |
 | [`file-scope`](src/packs/file-scope/) | 4 | The agent wrote somewhere it had no business writing: its own config, the machine, git's internals, the CI definition. |
@@ -458,7 +458,7 @@ Use the first when you want to *apply* guardrails, and the second when you want 
 writing.
 
 They are separate because the guard starts a fresh process on **every single command** an agent runs,
-under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 75
+under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 76
 guardrails that were already checked before release.
 
 ### Known limits of the carrier logic
