@@ -1,3 +1,5 @@
+// cspell:words HOOKSPATH hookspath
+
 /**
  * Quoted mentions — the shared `none_of` every command guardrail carries.
  *
@@ -548,3 +550,24 @@ export const RM_VARIABLE = "[\"']?(?:\\$|`)[^\\s;&|<>]{0,200}";
 
 /** PowerShell's parameter dash: `-`, or the en dash, em dash or horizontal bar it reads as one. */
 export const PWSH_DASH = "[-\\u2013\\u2014\\u2015]";
+
+/**
+ * Up to eight characters the shell removes from inside a word: quotes, a backslash,
+ * PowerShell's backtick, the curly quotes, and the `$` of `$'…'`. Placed between the letters
+ * of a flag, it reads `--no-"verify"` and `--no-ver\ify` as the flag they spell.
+ */
+export const IN_WORD = "[^\\w\\s-]{0,8}";
+
+/** `git`, then up to 200 characters of its arguments, crossing backslash-newline continuations. */
+export const GIT_PRE = "\\bgit\\b(?:[^|;&\\n\\\\]|\\\\[\\s\\S]){0,200}";
+
+/** Up to eight non-word characters before and between the letters of a config key. */
+const KEY_GAP = "\\W{0,8}";
+
+/**
+ * `core.hooksPath` as the shell reads it: quotes or backslashes before or between its letters
+ * (`core.hooks''Path`, `"core"."hooksPath"`, `core.hooks\Path`) are removed before git sees the
+ * key. A stray blank or `=` between letters only adds a match.
+ */
+export const HOOKSPATH =
+  KEY_GAP + [..."core.hookspath"].map((c) => (c === "." ? "\\." : c)).join(KEY_GAP);
