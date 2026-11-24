@@ -16,7 +16,7 @@
  *     curl --data "we ran rm -rf /tmp/x" https://…    -> DENY  dd.rm-rf-absolute
  *
  * Without an exemption, a person documenting this tool is blocked by this tool.
- * That applies to every command-channel guardrail — 64 of the 75. The eleven guardrails
+ * That applies to every command-channel guardrail — 65 of the 76. The eleven guardrails
  * that only read a `file_glob` never see a command.
  *
  * ── Why exemption by CARRIER VERB, and not by "the payload is quoted" ────────

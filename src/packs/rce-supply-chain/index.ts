@@ -7,12 +7,13 @@
  * blocks, because every one of them is also how legitimate software gets
  * installed.
  *
- * Six guardrails, including `block-curl-pipe-to-shell` — executing an unreviewed
+ * Seven guardrails, including `block-curl-pipe-to-shell` — executing an unreviewed
  * remote script is the pack's subject.
  */
 
 import type { Rule } from "../../schema.js";
 import { blockCurlPipeToShell } from "./block-curl-pipe-to-shell.js";
+import { rceDecodeToShell } from "./rce-decode-to-shell.js";
 import { rceEvalDynamic } from "./rce-eval-dynamic.js";
 import { rceForeignRegistry } from "./rce-foreign-registry.js";
 import { rceRemoteRunner } from "./rce-remote-runner.js";
@@ -27,4 +28,5 @@ export const rules: readonly Rule[] = [
   rceTlsVerifyOff,
   rceUnverifiedPackage,
   blockCurlPipeToShell,
+  rceDecodeToShell,
 ];

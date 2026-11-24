@@ -38,9 +38,9 @@ function conditionsOf(rule: Rule) {
   ];
 }
 
-describe("the corpus is 75 rules across eleven packs", () => {
-  it("has exactly 75 rules", () => {
-    expect(RULES.length).toBe(75);
+describe("the corpus is 76 rules across eleven packs", () => {
+  it("has exactly 76 rules", () => {
+    expect(RULES.length).toBe(76);
   });
 
   /**
@@ -58,7 +58,7 @@ describe("the corpus is 75 rules across eleven packs", () => {
       "destructive-data": 8,
       "prod-infra": 8,
       "secret-exposure": 10,
-      "rce-supply-chain": 6,
+      "rce-supply-chain": 7,
       "safety-bypass": 8,
       "privilege-supply-chain": 6,
       "file-scope": 4,
@@ -69,7 +69,7 @@ describe("the corpus is 75 rules across eleven packs", () => {
     for (const pack of PACKS) {
       expect(RULES_BY_PACK[pack].length, `pack ${pack}`).toBe(counts[pack]);
     }
-    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(75);
+    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(76);
   });
 
   it("leaves no pack empty — an empty pack in `rules list` reads as coverage", () => {
@@ -425,6 +425,7 @@ const OWASP_TAGS: Record<string, readonly string[]> = {
   "ps.persistence": ["ASI03"],
   "ps.publish-artifact": ["ASI04", "LLM04"],
   "ps.sudo-write": ["ASI03"],
+  "rce.decode-to-shell": ["ASI04", "ASI05", "LLM04"],
   "rce.eval-dynamic": ["ASI04", "ASI05", "LLM04"],
   "rce.foreign-registry": ["ASI04", "LLM04"],
   "rce.remote-runner": ["ASI04", "ASI05", "LLM04"],
