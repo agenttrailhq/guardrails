@@ -1,4 +1,4 @@
-// cspell:words HOOKSPATH hookspath
+// cspell:words HOOKSPATH hookspath utput curlrc
 
 /**
  * Quoted mentions — the shared `none_of` every command guardrail carries.
@@ -16,8 +16,8 @@
  *     curl --data "we ran rm -rf /tmp/x" https://…    -> DENY  dd.rm-rf-absolute
  *
  * Without an exemption, a person documenting this tool is blocked by this tool.
- * That applies to every command-channel guardrail — 62 of the 74. The twelve `file_glob`
- * guardrails never see a command.
+ * That applies to every command-channel guardrail — 64 of the 75. The eleven guardrails
+ * that only read a `file_glob` never see a command.
  *
  * ── Why exemption by CARRIER VERB, and not by "the payload is quoted" ────────
  *
@@ -158,7 +158,7 @@ export const SHELL_AND_MCP = "{Bash,PowerShell,mcp__*}";
  * end. They are written as the characters themselves, not `\u` escapes, so each costs
  * one character of the pattern length limit.
  */
-const CURLY = "‘-‟";
+export const CURLY = "‘-‟";
 
 /**
  * Text outside a quoted run in a carrier. Excludes both quote characters and every
@@ -303,6 +303,33 @@ export const PRINT_MENTION: MatchCondition = {
 };
 
 /**
+ * No write flag in the rest of the request. For curl: `-o`, `-O`, `--output`, `--output-dir`
+ * and `--remote-name`, as `short` `o` and `long` `rem` (`--ou…` is shared). For wget: `-O`,
+ * `--output-document`, `-P` and `--directory-prefix`, as `[op]` and `dir`. Also joined to the
+ * value (`-o/path`, `--output=…`), inside a short cluster (`-sSLo`, `-#o`, `-qO-`), and with
+ * quotes the shell removes (`"-o"`, `-'o'`, `--"output"`, `--o""utput`). Any short cluster with
+ * the letter counts (the patterns ignore case); each only ends the exemption.
+ *
+ * Read outside quoted runs (up to four, as the carrier allows), so a body that quotes ` -o` is
+ * still a mention, and up to the next separator or pipe, so `| grep -o x` after the request does
+ * not count. A short flag followed by `/dev/null` (`-o /dev/null`, `-so/dev/null`) writes nothing
+ * and is not counted, so a status check with `-w "%{http_code}"` stays a mention; the long
+ * `--output /dev/null` still counts.
+ */
+const noWrite = (short: string, long: string) =>
+  `(?!(?:[^|;&"']*(?:"[^"]*"|'[^']*')){0,4}[^|;&"']*\\s["']?-(?:[\\w#:]*["']*${short}(?! ?/dev/null)|-["']*(?:o["']*u|${long})))`;
+
+/** The three patterns of one HTTP tool: quiet segments before it, after it, or `sudo` before it. */
+const http = (tool: string, short: string, long: string): string[] => {
+  const head = `${tool}${noWrite(short, long)}[ \\t]`;
+  return [
+    `^\\s*${LEAD}${head}${quotedArgs("")}`,
+    `^\\s*${head}${quotedArgs()}`,
+    `^\\s*sudo +${head}${quotedArgs("")}`,
+  ];
+};
+
+/**
  * An HTTP request carrying a quoted body — the shape that surfaced this.
  *
  * A quoted argument is REQUIRED, unlike the other three: an unquoted
@@ -313,10 +340,20 @@ export const PRINT_MENTION: MatchCondition = {
  * `block-curl-pipe-to-shell`, `rce.remote-runner`, `rce.eval-dynamic`,
  * `rce.tls-verify-off` and `se.secret-egress` — for the last of these, POSTing
  * the quoted text off the box is precisely the harm it exists to catch.
+ *
+ * A request that also writes a file is not a mention: {@link noWrite} ends the exemption.
+ * This only narrows the exemption, never widens it: quoted dangerous text sent through any of
+ * the shapes below is now held. To stay inside the length limit, each tool has three patterns:
+ * quiet segments before the request, quiet segments after it, or one `sudo` in front, never two
+ * of these together, and no `sort`/`uniq`/`cut`/`less` readers after it.
+ *
+ * Known limits: a write the command never names (`-K`/`--config` files, a quoted `"$OPTS"`,
+ * `CURL_HOME` or `.curlrc`, `wget -i` lists) is not seen. An upload (`-T`, `--upload-file`,
+ * `-F "f=@…"`) is not a write and stays a mention; `ex.file-upload` holds it.
  */
 export const HTTP_BODY_MENTION: MatchCondition = {
   kind: "execute_tool",
-  detail_matches: carrier("(?:curl|wget)", "(?:curl|wget)", quotedArgs),
+  detail_matches: [...http("curl", "o", "rem"), ...http("wget", "[op]", "dir")],
 };
 
 /**

@@ -38,9 +38,9 @@ function conditionsOf(rule: Rule) {
   ];
 }
 
-describe("the corpus is 74 rules across eleven packs", () => {
-  it("has exactly 74 rules", () => {
-    expect(RULES.length).toBe(74);
+describe("the corpus is 75 rules across eleven packs", () => {
+  it("has exactly 75 rules", () => {
+    expect(RULES.length).toBe(75);
   });
 
   /**
@@ -59,7 +59,7 @@ describe("the corpus is 74 rules across eleven packs", () => {
       "prod-infra": 8,
       "secret-exposure": 10,
       "rce-supply-chain": 6,
-      "safety-bypass": 7,
+      "safety-bypass": 8,
       "privilege-supply-chain": 6,
       "file-scope": 4,
       "agent-context": 6,
@@ -69,7 +69,7 @@ describe("the corpus is 74 rules across eleven packs", () => {
     for (const pack of PACKS) {
       expect(RULES_BY_PACK[pack].length, `pack ${pack}`).toBe(counts[pack]);
     }
-    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(74);
+    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(75);
   });
 
   it("leaves no pack empty — an empty pack in `rules list` reads as coverage", () => {
@@ -406,6 +406,7 @@ const OWASP_TAGS: Record<string, readonly string[]> = {
   "fs.system-paths": ["ASI02", "LLM03"],
   "fs.vcs-internals": ["ASI02", "LLM03"],
   "gb.admin-merge": ["ASI09"],
+  "gb.agenttrail-disable": ["ASI09", "ASI10"],
   "gb.ansi-terminal-forgery": ["ASI09", "LLM10"],
   "gb.audit-trail-purge": ["ASI09"],
   "gb.execution-policy-bypass": ["ASI09"],
