@@ -171,3 +171,35 @@ describe("argument-scanning patterns stay fast on long commands", () => {
     expect(performance.now() - start).toBeLessThan(50);
   });
 });
+
+/**
+ * A long run of whitespace, read by every pattern in the corpus.
+ *
+ * A start alternative that can match inside a run (a newline) followed by its own `\s*` makes
+ * each start re-read the rest of the run: quadratic in its length. Every pattern must give the
+ * run one owner, so each one stays fast on a 50,000-character run of newlines or blanks.
+ */
+describe("every pattern is linear on a long run of whitespace", () => {
+  const compiled = RULES.flatMap((rule) =>
+    [...(rule.match.any_of ?? []), ...(rule.match.all_of ?? []), ...(rule.match.none_of ?? [])]
+      .flatMap((c) => c.detail_matches ?? [])
+      .map((source) => ({ id: rule.id, re: new RegExp(source, "i") })),
+  );
+  for (const { re } of compiled) re.test("");
+  const runs = [
+    ["newlines", "\n".repeat(50_000)],
+    ["newlines then a word", `${"\n".repeat(50_000)}x`],
+    ["blanks", " ".repeat(50_000)],
+    ["newline and blank", "\n ".repeat(25_000)],
+    ["CRLF", "\r\n".repeat(25_000)],
+    ["separator and blank", "; ".repeat(25_000)],
+  ] as const;
+
+  it.each(runs)("%s: each pattern under 50 ms", (_name, input) => {
+    for (const { id, re } of compiled) {
+      const start = performance.now();
+      re.test(input);
+      expect(performance.now() - start, id).toBeLessThan(50);
+    }
+  });
+});
