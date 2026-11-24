@@ -523,3 +523,28 @@ export const RM_RECURSIVE = "(?:-[a-z]{0,8}r[a-z]{0,8}|--recursive)";
 
 /** The end of an argument. */
 export const ARG_END = "(?:[ \\t;&|)]|$)";
+
+// ── Spellings the shell reads as the same command ────────────────────────────
+
+/**
+ * A separator between words on any shell: whitespace, U+0085 (which PowerShell reads as
+ * whitespace and `\s` does not match), and bash's `$IFS` / `${IFS}`.
+ */
+export const SEP = "(?:[\\s\\x85]|\\$\\{?ifs\\}?)";
+
+/** Bash's `$IFS` or `${IFS}`, used in place of a blank. */
+export const IFS = "\\$\\{?ifs\\}?";
+
+/**
+ * A recursive `rm` flag written so the shell still reads it as one: quotes, backslashes or
+ * braces inside it (`'-rf'`, `-r"f"`, `\-rf`, `-{r,f}`, `$'-rf'`), up to 16 before the dash and
+ * 32 inside, or a `--r…` prefix of `--recursive`, which GNU's option parser accepts. The curly
+ * quotes count too: PowerShell reads them as quotes, and in bash they only add a match.
+ */
+export const RM_RECURSIVE_QUOTED = `(?:["'\\\\$${CURLY}]{0,16}-[a-z"'\\\\{},${CURLY}]{0,32}r[a-z"'\\\\{},${CURLY}]{0,32}|["'\\\\${CURLY}]{0,16}--r[a-z]{0,8}["'${CURLY}]?)`;
+
+/** An `rm` argument whose value is a variable or a substitution, known only at run time. */
+export const RM_VARIABLE = "[\"']?(?:\\$|`)[^\\s;&|<>]{0,200}";
+
+/** PowerShell's parameter dash: `-`, or the en dash, em dash or horizontal bar it reads as one. */
+export const PWSH_DASH = "[-\\u2013\\u2014\\u2015]";

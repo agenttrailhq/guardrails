@@ -1,15 +1,20 @@
 import {
   ARG_END,
+  IFS,
   QUOTED_MENTION,
   RM_ARG_REST,
   RM_ARGS,
   RM_RECURSIVE,
+  RM_RECURSIVE_QUOTED,
   RM_WORD,
   SHELL_AND_MCP,
   TEMP_DELETE,
 } from "../../exemptions.js";
 import { bash, mcp, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
+
+/** The `rm` word, optionally closed by a quote (`"rm"`). */
+const RMW = `${RM_WORD}["']?`;
 
 /**
  * Recursive delete rooted at `/`.
@@ -38,7 +43,7 @@ export const ddRmRfAbsolute: Rule = {
   owasp: ["ASI02", "LLM03"],
   title: "rm -rf against an absolute path",
   description:
-    'Recursive delete rooted at `/` rather than at a relative path, with or without the force flag. The recursive flag (`-r`, `-R`, a cluster such as `-rf` or `-Rv`, or `--recursive`) and the absolute target may sit anywhere among the arguments of one `rm`: split across arguments (`rm -r -f /srv`), after `--`, after a relative operand, or after the target, and a quoted target (`rm -rf "/srv"`) counts too. Deliberately does NOT fire on `rm -rf ./node_modules` or `rm -rf build`, which are safe and happen many times a day, or on `rm -f /tmp/app.pid`, which has no recursive flag. Also not blocked: one `rm` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder), such as `rm -rf /tmp/review-1`. Still blocked: the bare temp folder (`rm -rf /tmp`); `..` anywhere in a target; a glob, brace expansion or backslash in a target (`/tmp/{..,x}/etc`, `/tmp/.[.]/etc`); a variable after the root; a target outside temp in the same `rm`; a chained second command; and the same delete through an MCP tool. The exemption reads the text only, so a symbolic link inside temp that points out of it is not caught. Known misses: a variable or `~` target (`rm -rf $DIR`) whose value is only known at run time — for those, see require-approval-rm-rf, which holds them for approval instead; an `rm` with more than twelve arguments before the flag or the target; a command continued onto the next line with a backslash; and a delete through `find -delete` or a file tool. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m "x" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.',
+    "Recursive delete rooted at `/` rather than at a relative path, with or without the force flag. The recursive flag (`-r`, `-R`, a cluster such as `-rf` or `-Rv`, or `--recursive`) and the absolute target may sit anywhere among the arguments of one `rm`: split across arguments (`rm -r -f /srv`), after `--`, after a relative operand, or after the target, and a quoted target (`rm -rf \"/srv\"`) counts too. Deliberately does NOT fire on `rm -rf ./node_modules` or `rm -rf build`, which are safe and happen many times a day, or on `rm -f /tmp/app.pid`, which has no recursive flag. Also not blocked: one `rm` whose every target is strictly inside the system temp folder (`/tmp`, `/private/tmp`, `/var/tmp`, the macOS per-user temp folder), such as `rm -rf /tmp/review-1`. Still blocked: the bare temp folder (`rm -rf /tmp`); `..` anywhere in a target; a glob, brace expansion or backslash in a target (`/tmp/{..,x}/etc`, `/tmp/.[.]/etc`); a variable after the root; a target outside temp in the same `rm`; a chained second command; and the same delete through an MCP tool. The exemption reads the text only, so a symbolic link inside temp that points out of it is not caught. The flag may also be written so the shell still reads it as one: quoted or escaped (`rm '-rf' /`, `rm -r\"f\" /`, `rm \\-rf /`), brace-expanded (`-{r,f}`), a `--r…` prefix of `--recursive`, or with the words joined by `$IFS`; the command word may be quoted (`\"rm\"`), and the whole command may be a brace expansion (`{rm,-rf,/srv}`, also `{/bin/rm,…}` and `{sudo,rm,…}`). An ANSI-C quoted flag (`$'-rf'`) counts too. Known misses: a quoted or escaped command word (`r'm'`); more than 16 quote characters before the flag or 32 inside it; an escape that spells the dash (`$'\\x2drf'`, held by require-approval-rm-rf); a variable or `~` target (`rm -rf $DIR`) whose value is only known at run time — for those, see require-approval-rm-rf, which holds them for approval instead; an `rm` with more than twelve arguments before the flag or the target; a command continued onto the next line with a backslash; and a delete through `find -delete` or a file tool. A quoted MENTION is not a use: a search, a `git commit -m` message, an `echo` or a `curl --data` body that only names this command is left alone. That holds only while every shell metacharacter stays inside the quotes, so `git commit -m \"x\" && …` is still caught; and the carrier must be the first word, so `sudo grep …` is not exempt.",
   match: {
     any_of: [
       {
@@ -49,6 +54,16 @@ export const ddRmRfAbsolute: Rule = {
           `${RM_WORD}${RM_ARGS}[ \\t]+${RM_RECURSIVE}${RM_ARGS}[ \\t]+["']?/`,
           // An absolute target, then a recursive flag after it.
           `${RM_WORD}${RM_ARGS}[ \\t]+["']?/${RM_ARG_REST}${RM_ARGS}[ \\t]+${RM_RECURSIVE}${ARG_END}`,
+          // The same pair with the flag quoted, escaped, brace-expanded or a --r… prefix.
+          `${RMW}${RM_ARGS}[ \\t]+${RM_RECURSIVE_QUOTED}${RM_ARGS}[ \\t]+["']?/`,
+          `${RMW}${RM_ARGS}[ \\t]+["']?/${RM_ARG_REST}${RM_ARGS}[ \\t]+${RM_RECURSIVE_QUOTED}`,
+          // Words separated by $IFS instead of blanks, flag first or target first.
+          `${RM_WORD}["']?${IFS}[^;&|<>\\s]{0,300}-[a-z"'\\\\]{0,16}r[^;&|<>\\s]{0,300}${IFS}["']?/`,
+          `${RM_WORD}["']?${IFS}[^;&|<>\\s]{0,300}${IFS}["']?/[^;&|<>\\s]{0,300}${IFS}["']?-[a-z]{0,8}r`,
+          // The whole command built by brace expansion: {rm,-rf,/target} or {rm,/target,-rf}, with up
+          // to three words before rm ({sudo,rm,…}) and a path on it ({/bin/rm,…}).
+          `\\{(?:[^,}\\s]{1,40},){0,3}["']?(?:[^,}\\s]{0,40}/)?rm["']?,[^}\\s]{0,300}-[a-z"']{0,8}r[^}\\s]{0,300},["']?/`,
+          `\\{(?:[^,}\\s]{1,40},){0,3}["']?(?:[^,}\\s]{0,40}/)?rm["']?,(?:[^}\\s]{0,300},)?["']?/[^}\\s]{0,300},["']?-[a-z]{0,8}r`,
         ],
       },
     ],
@@ -75,6 +90,32 @@ export const ddRmRfAbsolute: Rule = {
       bash('rm -r "/srv/data"'),
       bash("sudo rm -r -f /srv/data"),
       bash("/bin/rm -r /srv/data"),
+      // The recursive flag written so the shell still reads it as one.
+      bash("rm '-rf' /"),
+      bash('rm "-rf" /'),
+      bash('rm -r"f" /'),
+      bash('rm -"r"f /srv/data'),
+      bash("rm '-r' '-f' /srv/data"),
+      bash("rm ''''-rf /srv/data"),
+      bash("rm \\-rf /srv/data"),
+      bash("rm -\\r /srv/data"),
+      bash("rm -{r,f} /srv/data"),
+      bash("rm -r{,} /srv/data"),
+      bash("rm --rec /srv/data"),
+      bash("rm --recur /srv/data"),
+      bash('"rm" -rf /srv/data'),
+      bash("rm /srv/data '-rf'"),
+      bash('sudo rm -r"f" /srv/data'),
+      bash("command rm '-rf' /srv/data"),
+      bash("rm ‘-rf’ /srv/data"),
+      // Words separated by $IFS, and the command built by brace expansion.
+      bash(`rm\${IFS}-rf\${IFS}/srv/data`),
+      bash("rm$IFS-rf$IFS/srv/data"),
+      bash("{rm,-rf,/srv/data}"),
+      bash("{rm,/srv/data,-rf}"),
+      bash("{/bin/rm,-rf,/srv/data}"),
+      bash("{sudo,rm,-rf,/srv/data}"),
+      bash("rm $'-rf' /srv/data"),
       // A search or history command piped into a delete, a shell, a write or an executing reader.
       bash("grep -rl x /srv | xargs rm -rf /srv/cache"),
       bash("rg -l x | xargs rm -r /var/lib/app"),
