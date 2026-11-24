@@ -13,9 +13,13 @@ import type { Rule } from "../../schema.js";
  * `pnpm dlx`, `timeout <n>`) or `NAME=value` assignments; then an optional directory prefix
  * (`/usr/local/bin/`). A tunnel tool named anywhere else — inside a PR body, a heredoc, a note
  * written to a file — is text, not a run.
+ *
+ * The blanks after a start are whitespace other than a newline (`[^\S\n]*`). A newline is itself
+ * a start, so a run of newlines is read one start at a time instead of each start re-reading
+ * the rest of the run, which made the scan quadratic in the length of the run.
  */
 const RUNS =
-  '(?:^|[\\n;&|(`]|-c\\s+["\']|:\\s*")\\s*(?:(?:sudo|nohup|exec|time|command|env|npx|pnpm\\s+dlx|timeout\\s+\\S{1,20}|\\w{1,40}=\\S{0,200})\\s+){0,4}(?:[^\\s;&|(`"\']{0,200}/)?';
+  '(?:^|[\\n;&|(`]|-c\\s+["\']|:\\s*")[^\\S\\n]*(?:(?:sudo|nohup|exec|time|command|env|npx|pnpm\\s+dlx|timeout\\s+\\S{1,20}|\\w{1,40}=\\S{0,200})\\s+){0,4}(?:[^\\s;&|(`"\']{0,200}/)?';
 
 /** An `ssh` command, then its arguments up to the next separator or quote. */
 const SSH = "(?:^|[\\s;&|(/])ssh(?=\\s)[^|;&\"'<>]*";
@@ -59,6 +63,10 @@ export const exTunnelExpose: Rule = {
   fixtures: {
     block: [
       bash("ngrok http 3000"),
+      // A start, then a newline and blanks before the tool: the newline starts the command.
+      bash("cd app &&\n  ngrok http 3000"),
+      bash("echo ready;\n\n\tngrok http 3000"),
+      bash("npm run dev &\r\nngrok http 3000"),
       bash("ngrok tcp 22"),
       bash("cloudflared tunnel --url http://localhost:8080"),
       bash("lt --port 8000"),
