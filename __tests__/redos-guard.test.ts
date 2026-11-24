@@ -132,6 +132,12 @@ describe("argument-scanning patterns stay fast on long commands", () => {
     "ti.test-file-delete",
     "ex.tunnel-expose",
     "block-destructive-sql",
+    // Quoted and escaped spellings, the hook and self-config shapes, and the decode pipes.
+    "gb.git-no-verify",
+    "gb.hooks-disable",
+    "gb.agenttrail-disable",
+    "fs.agent-self-config",
+    "rce.decode-to-shell",
   ];
   const patterns = RULES.filter((rule) => SCANNING_RULES.includes(rule.id)).flatMap((rule) =>
     [...(rule.match.any_of ?? []), ...(rule.match.none_of ?? [])].flatMap(
@@ -159,16 +165,58 @@ describe("argument-scanning patterns stay fast on long commands", () => {
     // Long text with SQL phrases and no client, and a client with no phrase.
     `${repeat("drop table x", 600)}`,
     `psql ${repeat("drop tables", 600)}`,
+    // Quotes, IFS separators, brace items and backslash continuations with no target.
+    `rm ${"'".repeat(4000)}`,
+    `rm${"$IFS-x".repeat(700)}`,
+    `{rm,${repeat("a,", 2000)}`,
+    `git commit ${repeat('"a"', 1000)}`,
+    `git -c ${"\\\n".repeat(2000)}`,
+    `git -c ${"core".repeat(1000)}`,
+    // Decoders and wrappers with no shell at the end, and long blanks before the shell word.
+    `base64 -d ${repeat("| cat", 800)}`,
+    `base64 -d | ${repeat("sudo -x", 500)}`,
+    `base64 -d x |${" ".repeat(8000)}x`,
+    // The HTTP carrier's write-flag check: many quoted arguments, and many flags after a body.
+    `curl ${repeat('"a"', 2000)}`,
+    `curl -d "x" ${repeat("-o x", 1500)}`,
+    `wget -d "x" ${repeat(`-'x'"`, 1500)}`,
+    `curl -d "x" ${repeat("-o /dev/null", 700)} $X`,
+    // Long decoder arguments and many stages, which the 999-character spans read.
+    `base64 ${repeat("-w0", 2700)}`,
+    `base64 -d ${repeat("| cat", 1600)}`,
+    `${"$(base64 -d ".repeat(600)}`,
+    `${"( ".repeat(4000)}base64 -d`,
+    // Protected folders with no write, and long names that almost obfuscate a path.
+    `> ~/.${"x".repeat(4000)}`,
+    `cd .claude && ${repeat("x", 2000)}`,
+    `find .claude ${repeat("-x", 1500)}`,
+    `agenttrail-guard ${repeat("-x", 1500)}`,
+    // Quoted paths and globs under a protected folder that name no protected file.
+    `echo x > ${repeat('".claude/a"', 700)}`,
+    `cp x .claude/${"a*".repeat(4000)}.md`,
+    // Nested substitutions with no decoder at the end.
+    `${"$(".repeat(4000)}base64 -d`,
   ];
 
   it("finds the patterns it times", () => {
     expect(patterns.length).toBeGreaterThanOrEqual(10);
   });
 
+  // Compiled once, as the guard compiles each pattern once; only matching is timed. V8 builds a
+  // pattern's matcher on its first use, so each is used once here before any timing. The best of
+  // three runs is kept: a backtracking pattern is slow every time, while a busy test runner
+  // (the files run in parallel) only slows some runs.
+  const compiled = patterns.map((source) => new RegExp(source, "i"));
+  for (const re of compiled) re.test("");
+
   it.each(inputs.map((input) => [input.slice(0, 24), input]))("%s… under 50 ms", (_l, input) => {
-    const start = performance.now();
-    for (const source of patterns) new RegExp(source, "i").test(input);
-    expect(performance.now() - start).toBeLessThan(50);
+    let best = Number.POSITIVE_INFINITY;
+    for (let run = 0; run < 3; run++) {
+      const start = performance.now();
+      for (const re of compiled) re.test(input);
+      best = Math.min(best, performance.now() - start);
+    }
+    expect(best).toBeLessThan(50);
   });
 });
 
