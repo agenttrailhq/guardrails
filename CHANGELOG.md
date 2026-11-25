@@ -10,6 +10,16 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.15](https://github.com/agenttrailhq/guardrails/compare/v0.2.14...v0.2.15) (2026-11-25)
+
+### Features
+
+* hold SQL that drops a schema or column, or changes every row ([c873fac](https://github.com/agenttrailhq/guardrails/commit/c873facc402764d2894b27b56e8c4d92d8eeadd7))
+
+### Bug Fixes
+
+* state what the SQL holds read on MCP and list their misses ([fa42c3d](https://github.com/agenttrailhq/guardrails/commit/fa42c3d01f5c637aeb38e3421cc83f7141c30847))
+
 ## [0.2.14](https://github.com/agenttrailhq/guardrails/compare/v0.2.13...v0.2.14) (2026-11-25)
 
 ### Features

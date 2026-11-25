@@ -36,7 +36,7 @@
  * Pinned to `package.json`'s `version` by `__tests__/stamp.test.ts` — this is a copy
  * of that value, not an independent one, and the test is what makes the copy safe.
  */
-export const CATALOG_VERSION = "0.2.14";
+export const CATALOG_VERSION = "0.2.15";
 
 /**
  * When the guardrails in this catalog reached their current state, as an ISO-8601
@@ -47,4 +47,4 @@ export const CATALOG_VERSION = "0.2.14";
  * the guard handles a missing date, and a wrong date that looks right is worse than
  * a missing one.
  */
-export const CATALOG_PUBLISHED_AT = "2026-11-25T09:22:17Z";
+export const CATALOG_PUBLISHED_AT = "2026-11-25T17:11:27Z";
