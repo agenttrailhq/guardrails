@@ -1,4 +1,4 @@
-// cspell:words setsid argjson ionice clau ings extglob
+// cspell:words setsid argjson ionice clau ings extglob sqlcmd dbo
 /**
  * The known misses a guardrail's description states, pinned.
  *
@@ -112,6 +112,31 @@ const MISSES: readonly [string, string, string][] = [
   ["rce.decode-to-shell", "Bash", "python3 -c 'import base64;print(base64.b64decode(x))' | sh"],
   // A decoder nested four substitutions deep.
   ["rce.decode-to-shell", "Bash", "$(a $(b $(c $(base64 -d f))))"],
+  // MySQL's DROP without the COLUMN keyword, and a statement in a file the line does not show.
+  ["dd.sql-schema-drop", "Bash", "mysql -e 'ALTER TABLE users DROP email'"],
+  ["dd.sql-schema-drop", "Bash", "psql -f drop_legacy.sql"],
+  // Any WHERE in the statement counts: in a comment, a tautology, or a subquery.
+  ["dd.sql-unscoped-write", "Bash", "psql -c 'DELETE FROM sessions -- no where clause'"],
+  ["dd.sql-unscoped-write", "Bash", 'psql -c "DELETE FROM sessions WHERE 1=1;"'],
+  [
+    "dd.sql-unscoped-write",
+    "Bash",
+    'psql -c "UPDATE users SET score = (SELECT max(s) FROM scores WHERE scores.uid = users.id);"',
+  ],
+  // A second -c whose statement has a WHERE, with no `;` between them.
+  ["dd.sql-unscoped-write", "Bash", 'psql -c "DELETE FROM sessions" -c "SELECT 1 WHERE true"'],
+  // MySQL's UPDATE … JOIN, and T-SQL's DELETE TOP.
+  [
+    "dd.sql-unscoped-write",
+    "Bash",
+    "mysql -e 'UPDATE users JOIN plans ON plans.id = users.plan_id SET users.active = 0'",
+  ],
+  [
+    "dd.sql-unscoped-write",
+    "PowerShell",
+    'sqlcmd -S localhost -Q "DELETE TOP (100) FROM dbo.Sessions"',
+  ],
+  ["dd.sql-unscoped-write", "Bash", "psql -f reset.sql"],
 ];
 
 describe("stated known misses are still misses", () => {

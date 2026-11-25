@@ -5,8 +5,8 @@
  * --hard` loses uncommitted edits; a dropped volume, a dropped database or a
  * deleted shadow copy loses everything, and no reflog helps.
  *
- * Eight guardrails, including `block-destructive-sql`, filed here by harm —
- * irrecoverable data loss is this pack's whole subject.
+ * Ten guardrails, including `block-destructive-sql` and the two SQL holds beside it, filed
+ * here by harm — irrecoverable data loss is this pack's whole subject.
  */
 
 import type { Rule } from "../../schema.js";
@@ -18,6 +18,8 @@ import { ddDockerVolumeDestroy } from "./dd-docker-volume-destroy.js";
 import { ddMigrationReset } from "./dd-migration-reset.js";
 import { ddRmRfAbsolute } from "./dd-rm-rf-absolute.js";
 import { ddShadowCopyDelete } from "./dd-shadow-copy-delete.js";
+import { ddSqlSchemaDrop } from "./dd-sql-schema-drop.js";
+import { ddSqlUnscopedWrite } from "./dd-sql-unscoped-write.js";
 
 /** Guardrails in this pack. */
 export const rules: readonly Rule[] = [
@@ -29,4 +31,6 @@ export const rules: readonly Rule[] = [
   ddAcceptDataLoss,
   ddShadowCopyDelete,
   blockDestructiveSql,
+  ddSqlSchemaDrop,
+  ddSqlUnscopedWrite,
 ];

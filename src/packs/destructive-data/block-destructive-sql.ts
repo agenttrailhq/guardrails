@@ -1,19 +1,7 @@
 // cspell:words clickhouse cqlsh dbmate duckdb liquibase litecli mycli mysqlsh PGPASSWORD pgcli snowsql sqlcmd sqlplus usql
-import { QUOTED_MENTION } from "../../exemptions.js";
+import { QUOTED_MENTION, RUNS_SQL } from "../../exemptions.js";
 import { bash, mcp, mentions, pwsh } from "../../fixtures.js";
 import type { Rule } from "../../schema.js";
-
-/**
- * A SQL client word anywhere in the same command, as a lookahead from the start of the text.
- *
- * A shell command that only CONTAINS destructive SQL — a PR body, a heredoc written to a
- * migration file, a note — does not run it. Something that executes SQL has to be on the line:
- * a database shell or a CLI that runs a statement. Reached through `docker exec`, `kubectl exec`,
- * `ssh` or an env prefix, the client word is still in the command, so those need no case of
- * their own. Anchored at `^` so the engine tries one start, not one per character.
- */
-const RUNS_SQL =
-  "^(?=[\\s\\S]*\\b(?:psql|pgcli|mysql|mysqlsh|mariadb|mycli|sqlite3|litecli|sqlcmd|sqlplus|usql|clickhouse(?:-client|\\s+client)|cockroach\\s+sql|snowsql|bq\\s+query|cqlsh|duckdb|prisma\\s+db\\s+execute|d1\\s+execute)\\b)[\\s\\S]*";
 
 /**
  * The id has no dotted pack prefix. Guardrail ids are stable identifiers, so it is not

@@ -16,7 +16,7 @@
  *     curl --data "we ran rm -rf /tmp/x" https://…    -> DENY  dd.rm-rf-absolute
  *
  * Without an exemption, a person documenting this tool is blocked by this tool.
- * That applies to every command-channel guardrail — 65 of the 76. The eleven guardrails
+ * That applies to every command-channel guardrail — 67 of the 78. The eleven guardrails
  * that only read a `file_glob` never see a command.
  *
  * ── Why exemption by CARRIER VERB, and not by "the payload is quoted" ────────
@@ -608,3 +608,32 @@ const KEY_GAP = "\\W{0,8}";
  */
 export const HOOKSPATH =
   KEY_GAP + [..."core.hookspath"].map((c) => (c === "." ? "\\." : c)).join(KEY_GAP);
+
+// ── SQL that runs ────────────────────────────────────────────────────────────
+
+// cspell:words clickhouse cqlsh duckdb litecli mycli mysqlsh pgcli snowsql sqlcmd sqlplus usql
+
+/**
+ * A SQL client word anywhere in the same command, as a lookahead from the start of the text.
+ *
+ * A shell command that only CONTAINS destructive SQL — a PR body, a heredoc written to a
+ * migration file, a note — does not run it. Something that executes SQL has to be on the line:
+ * a database shell or a CLI that runs a statement. Reached through `docker exec`, `kubectl exec`,
+ * `ssh` or an env prefix, the client word is still in the command, so those need no case of
+ * their own. Anchored at `^` so the engine tries one start, not one per character.
+ */
+export const RUNS_SQL =
+  "^(?=[\\s\\S]*\\b(?:psql|pgcli|mysql|mysqlsh|mariadb|mycli|sqlite3|litecli|sqlcmd|sqlplus|usql|clickhouse(?:-client|\\s+client)|cockroach\\s+sql|snowsql|bq\\s+query|cqlsh|duckdb|prisma\\s+db\\s+execute|d1\\s+execute)\\b)[\\s\\S]*";
+
+/**
+ * The label of an MCP database tool whose SQL argument `MCP_COMMAND_FIELDS` names, under any
+ * server name: the PostgreSQL reference server's `query`, the SQLite reference server's
+ * `read_query`, `write_query` and `create_table`, Supabase's `execute_sql` and
+ * `apply_migration`, and Neon's `run_sql`.
+ *
+ * A guardrail whose statement shape also reads as prose (a DELETE or an UPDATE) uses this label
+ * rather than `mcp__*`, so a ticket, a chat message or a pull request sent through an MCP tool
+ * is not read as SQL. A database server whose tool has another name is not covered.
+ */
+export const MCP_SQL_TOOLS =
+  "mcp__*__{query,read_query,write_query,create_table,execute_sql,apply_migration,run_sql}";

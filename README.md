@@ -28,7 +28,7 @@ Plain data you can read, test, and change. Enforced in **Claude Code**, **Cursor
 
 </div>
 
-[76 guardrails](https://www.agenttrail.sh/guardrails), grouped into 11 packs. Apache-2.0. Published
+[78 guardrails](https://www.agenttrail.sh/guardrails), grouped into 11 packs. Apache-2.0. Published
 as `@agenttrail/guardrails` and enforced by [AgentTrail Guard](https://github.com/agenttrailhq/guard).
 
 ![A Claude Code session: asked to split a name column and push the schema, the agent edits the Prisma schema and seed, then runs npx prisma db push --force-reset to wipe the database. AgentTrail Guard blocks it with the guardrail dd.accept-data-loss, and the agent stops](.github/assets/guard-blocks-force-reset.gif)
@@ -172,7 +172,7 @@ protection, which they never asked to turn off and would not know they had.
 | Pack | Guardrails | What it is about |
 |---|---:|---|
 | [`working-tree`](src/packs/working-tree/) | 9 | Destroying uncommitted work or published history: `git reset --hard`, `git clean -fd`, force-push, `rm -rf`. |
-| [`destructive-data`](src/packs/destructive-data/) | 8 | Data git cannot bring back: a dropped volume, a dropped database, destructive DDL, a deleted shadow copy. |
+| [`destructive-data`](src/packs/destructive-data/) | 10 | Data git cannot bring back: a dropped volume, a dropped database, destructive DDL, a DELETE or UPDATE with no WHERE, a deleted shadow copy. |
 | [`prod-infra`](src/packs/prod-infra/) | 8 | Changing running infrastructure: Terraform, Kubernetes, Helm, cloud deletes, a deploy that names production. |
 | [`secret-exposure`](src/packs/secret-exposure/) | 10 | Credentials and sensitive data leaving where they live. Mostly `warn`: reading a secret is a normal part of a normal day. |
 | [`rce-supply-chain`](src/packs/rce-supply-chain/) | 7 | Running code nobody reviewed: pipe-to-shell, a remote runner, a redirected registry, TLS verification off, decoded or unpacked text run by a shell. |
@@ -202,7 +202,7 @@ command or a file change.
 
 | Pack | Agentic risks | LLM risks | Default action |
 |---|---|---|---|
-| `working-tree`, `destructive-data`, `prod-infra`, `file-scope` | ASI02 Tool Misuse and Exploitation | LLM03 Excessive Agency, LLM10 Improper Output Handling (`block-destructive-sql`) | `block` or `require_approval` |
+| `working-tree`, `destructive-data`, `prod-infra`, `file-scope` | ASI02 Tool Misuse and Exploitation | LLM03 Excessive Agency, LLM10 Improper Output Handling (`block-destructive-sql`, `dd.sql-schema-drop`, `dd.sql-unscoped-write`) | `block` or `require_approval` |
 | `rce-supply-chain` | ASI04 Agentic Supply Chain, ASI05 Unexpected Code Execution | LLM04 Supply Chain, LLM07 Misinformation (`rce.unverified-package`) | `block` or `require_approval` |
 | `privilege-supply-chain` | ASI03 Identity and Privilege Abuse, ASI04 Agentic Supply Chain | LLM03 Excessive Agency (`ps.iam-grant`), LLM04 Supply Chain, LLM07 Misinformation (`flag-dependency-install`) | `require_approval`, except `flag-dependency-install`, which is `warn` |
 | `secret-exposure`, `exfiltration` | ASI02 Tool Misuse and Exploitation, ASI03 Identity and Privilege Abuse | LLM02 Sensitive Information Disclosure | `secret-exposure` is mostly `warn`; `exfiltration` is `block` or `require_approval` |
@@ -458,7 +458,7 @@ Use the first when you want to *apply* guardrails, and the second when you want 
 writing.
 
 They are separate because the guard starts a fresh process on **every single command** an agent runs,
-under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 76
+under a ten-second ceiling. It cannot afford to load a validator it never calls, or to re-check 78
 guardrails that were already checked before release.
 
 ### Known limits of the carrier logic

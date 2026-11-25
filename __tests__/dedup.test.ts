@@ -150,7 +150,7 @@ describe("no two rules are near-duplicates", () => {
 
 describe("the corpus", () => {
   it("is no longer empty — the container shipped before the rules did", () => {
-    expect(RULES.length).toBe(76);
+    expect(RULES.length).toBe(78);
   });
 
   it("exposes all eleven packs, each with rules in it", () => {
