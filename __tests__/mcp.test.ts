@@ -13,6 +13,7 @@ import {
   type MatchCondition,
   MCP_COMMAND_FIELDS,
   MCP_GENERIC_COMMAND_FIELDS,
+  MCP_SQL_TOOLS,
   mcp,
   RULES,
   type Rule,
@@ -72,6 +73,14 @@ describe("MCP_COMMAND_FIELDS", () => {
   });
 });
 
+describe("MCP_SQL_TOOLS", () => {
+  it("names only tools whose SQL argument MCP_COMMAND_FIELDS maps", () => {
+    const tools = MCP_SQL_TOOLS.match(/^mcp__\*__\{([a-z_,]+)\}$/)?.[1]?.split(",") ?? [];
+    expect(tools.length).toBeGreaterThan(0);
+    expect(tools.filter((tool) => MCP_COMMAND_FIELDS[tool] === undefined)).toEqual([]);
+  });
+});
+
 describe("MCP_GENERIC_COMMAND_FIELDS", () => {
   it("is the four generic names", () => {
     expect([...MCP_GENERIC_COMMAND_FIELDS]).toEqual(["command", "cmd", "sql", "script"]);
@@ -112,7 +121,7 @@ describe("MCP block fixtures on command guardrails", () => {
 describe("the content channel", () => {
   it("is carried only by block-hardcoded-secrets, on every positive condition", () => {
     const tagged = RULES.filter((rule) =>
-      [...positives(rule), ...(rule.match.none_of ?? [])].some((c) => c.channel !== undefined),
+      [...positives(rule), ...(rule.match.none_of ?? [])].some((c) => c.channel === "content"),
     ).map((rule) => rule.id);
     expect(tagged).toEqual(["block-hardcoded-secrets"]);
     const secrets = RULES.find((rule) => rule.id === "block-hardcoded-secrets")!;

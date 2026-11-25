@@ -138,6 +138,9 @@ describe("argument-scanning patterns stay fast on long commands", () => {
     "gb.agenttrail-disable",
     "fs.agent-self-config",
     "rce.decode-to-shell",
+    // The no-WHERE lookahead runs from each DELETE or UPDATE it finds.
+    "dd.sql-schema-drop",
+    "dd.sql-unscoped-write",
   ];
   const patterns = RULES.filter((rule) => SCANNING_RULES.includes(rule.id)).flatMap((rule) =>
     [...(rule.match.any_of ?? []), ...(rule.match.none_of ?? [])].flatMap(
@@ -196,6 +199,11 @@ describe("argument-scanning patterns stay fast on long commands", () => {
     `cp x .claude/${"a*".repeat(4000)}.md`,
     // Nested substitutions with no decoder at the end.
     `${"$(".repeat(4000)}base64 -d`,
+    // Many statements with no WHERE and no `;`, and one with a long tail to scan.
+    `psql ${repeat("delete from x", 600)}`.slice(0, 8192),
+    `psql ${repeat("update x set", 700)}`.slice(0, 8192),
+    `psql -c "delete from x ${repeat("a", 4000)}"`,
+    `psql ${repeat("update a b", 800)}`.slice(0, 8192),
   ];
 
   it("finds the patterns it times", () => {
