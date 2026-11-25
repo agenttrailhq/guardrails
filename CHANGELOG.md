@@ -10,6 +10,19 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.14](https://github.com/agenttrailhq/guardrails/compare/v0.2.13...v0.2.14) (2026-11-25)
+
+### Features
+
+* hold commands that disable the guard or edit agent hook config ([abf87e7](https://github.com/agenttrailhq/guardrails/commit/abf87e7ca5414e4b835ec77cb4a39d22274fa391)), closes [-#o](https://github.com/agenttrailhq/-/issues/o)
+* hold decoded or unpacked text run by a shell ([ac87c64](https://github.com/agenttrailhq/guardrails/commit/ac87c64ad8fc991abfc2c0300726edf4868555ca))
+
+### Bug Fixes
+
+* hold more ways to skip git hooks for one command ([951e66d](https://github.com/agenttrailhq/guardrails/commit/951e66d13a158c368a340cbc76eada1cd7310e4d))
+* read each blank once after a tunnel command start ([39c9b15](https://github.com/agenttrailhq/guardrails/commit/39c9b150cd8c168a17a220c76e3720e4f4c09c50))
+* read quoted, escaped, brace and IFS spellings of recursive rm ([c1b05cb](https://github.com/agenttrailhq/guardrails/commit/c1b05cbc2d56ecf0f8d641f60a644be32ec7becc))
+
 ## [0.2.13](https://github.com/agenttrailhq/guardrails/compare/v0.2.12...v0.2.13) (2026-11-24)
 
 ### Bug Fixes
