@@ -137,6 +137,10 @@ const MISSES: readonly [string, string, string][] = [
     'sqlcmd -S localhost -Q "DELETE TOP (100) FROM dbo.Sessions"',
   ],
   ["dd.sql-unscoped-write", "Bash", "psql -f reset.sql"],
+  // A comment between the keywords. The MCP shapes the descriptions list depend on how an
+  // engine serializes a tool's input, which this stand-in does not model.
+  ["dd.sql-schema-drop", "Bash", 'psql -c "ALTER TABLE users DROP/**/COLUMN email"'],
+  ["dd.sql-unscoped-write", "Bash", 'psql -c "DELETE/**/FROM sessions"'],
 ];
 
 describe("stated known misses are still misses", () => {
