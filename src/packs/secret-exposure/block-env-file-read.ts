@@ -27,7 +27,10 @@ export const blockEnvFileRead: Rule = {
     block: [
       file(".env", "Read"),
       file("config/.env.production", "Read"),
+      // Matched after '.' and '..' are resolved.
+      file("/home/dev/project/src/../.env", "Read"),
       file("config/production.env", "Read"),
+      file("apps/api/./.env.local", "Read"),
       file("apps/api/.env.local", "Read"),
     ],
     allow: [
