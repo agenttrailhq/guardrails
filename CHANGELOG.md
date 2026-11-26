@@ -10,6 +10,12 @@ version is below `1.0.0`, a **breaking change bumps the minor** and anything els
 For this package, breaking means a removed guardrail, a renamed guardrail id, or a default
 action made stricter; adding a guardrail or a pack is a feature.
 
+## [0.2.16](https://github.com/agenttrailhq/guardrails/compare/v0.2.15...v0.2.16) (2026-11-26)
+
+### Bug Fixes
+
+* hold /private/etc, and add fixtures for dot-segment paths ([28bc476](https://github.com/agenttrailhq/guardrails/commit/28bc4769072b363621a88756ed6c916fcd74286e))
+
 ## [0.2.15](https://github.com/agenttrailhq/guardrails/compare/v0.2.14...v0.2.15) (2026-11-25)
 
 ### Features
